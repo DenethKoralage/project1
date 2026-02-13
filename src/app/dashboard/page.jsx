@@ -18,6 +18,14 @@ export default function DashboardPage() {
           <li className="bg-white p-4 rounded-md shadow">Accessed exclusive content</li>
         </ul>
       </div>
+      <div>
+        <h2 className="text-2xl font-bold mt-10">Upcoming Events</h2>
+        <ul className="mt-4 space-y-2">
+          <li className="bg-white p-4 rounded-md shadow ">Event 1</li>
+          <li className="bg-white p-4 rounded-md shadow">Event 2</li>
+          <li className="bg-white p-4 rounded-md shadow">Event 3</li>
+        </ul>
+      </div>
     </div>
   )
 }
