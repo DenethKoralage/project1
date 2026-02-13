@@ -31,3 +31,4 @@ C:\Users\DenethRandunu\prac project\nextJs\project1\MyApp.Api\obj\Debug\net10.0\
 C:\Users\DenethRandunu\prac project\nextJs\project1\MyApp.Api\obj\Debug\net10.0\MyApp.Api.pdb
 C:\Users\DenethRandunu\prac project\nextJs\project1\MyApp.Api\obj\Debug\net10.0\MyApp.Api.genruntimeconfig.cache
 C:\Users\DenethRandunu\prac project\nextJs\project1\MyApp.Api\obj\Debug\net10.0\ref\MyApp.Api.dll
+C:\Users\DenethRandunu\prac project\nextJs\project1\MyApp.Api\bin\Debug\net10.0\Scalar.AspNetCore.dll
