@@ -1,11 +1,12 @@
 import Image from "next/image";
 import Link from "next/link";
+import RollingNumber from "@/components/RollingNumber";
 
 const stats = [
-  { label: "Monthly Readers", value: "12K+" },
-  { label: "Published Articles", value: "180+" },
-  { label: "Avg. Read Time", value: "6 min" },
-  { label: "Community Members", value: "4.3K" },
+  { label: "Monthly Readers", value: "12K+", realValue: 12028 },
+  { label: "Published Articles", value: "180+", realValue: 183 },
+  { label: "Avg. Read Time", value: "6 min", realValue: 6.23 },
+  { label: "Community Members", value: "4.3K", realValue: 4300 },
 ];
 
 const featuredPosts = [
@@ -59,7 +60,7 @@ export default function Home() {
           <div className="space-y-6">
             {/* TOP BADGES */}
             <div className="flex items-center gap-3">
-              <p className="inline-flex rounded-full border border-slate-900/10 bg-white/60 px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em] text-slate-700">
+              <p className="inline-flex rounded-full border border-emerald-900/10 bg-white/60 px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em] text-slate-700">
                 The Financial Freedom
               </p>
 
@@ -130,7 +131,7 @@ export default function Home() {
               {item.value}
             </p>
             <p className="mt-1 text-xs font-medium uppercase tracking-widest text-slate-500">
-              {item.label}
+              <RollingNumber target={item.realValue} duration={2000} />
             </p>
           </article>
         ))}
