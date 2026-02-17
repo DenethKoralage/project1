@@ -2,27 +2,40 @@
 
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
+import { apiRequest } from "@/lib/api";
+import { setAuth } from "@/lib/auth";
 
 export default function Login() {
   const router = useRouter();
 
-  const [username, setUsername] = useState("");
+  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleLogin = (e) => {
-    e.preventDefault(); // prevent page reload
+  const handleLogin = async (e) => {
+    e.preventDefault();
 
-    if (!username || !password) {
-      alert("Please enter both username and password");
+    if (!email || !password) {
+      setError("Please enter both email and password");
       return;
     }
 
-    // 🔐 Replace this with real API call
-    if (username === "admin" && password === "1234") {
-      alert("Login successful");
-      router.push("/dashboard"); // redirect after login
-    } else {
-      alert("Invalid credentials");
+    setIsSubmitting(true);
+    setError("");
+
+    try {
+      const response = await apiRequest("/api/auth/login", {
+        method: "POST",
+        body: { email, password },
+      });
+
+      setAuth(response.token, response.user);
+      router.push("/dashboard");
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -40,21 +53,21 @@ export default function Login() {
         <div className="mb-4">
           <label
             className="block text-gray-700 text-sm font-bold mb-2"
-            htmlFor="username"
+            htmlFor="email"
           >
-            Username
+            Email
           </label>
           <input
-            id="username"
-            type="text"
-            placeholder="Username"
-            value={username}
-            onChange={(e) => setUsername(e.target.value)}
+            id="email"
+            type="email"
+            placeholder="name@email.com"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
             className="shadow border rounded w-full py-2 px-3 text-gray-700 focus:outline-none focus:ring-2 focus:ring-emerald-600"
           />
         </div>
 
-        <div className="mb-6">
+        <div className="mb-4">
           <label
             className="block text-gray-700 text-sm font-bold mb-2"
             htmlFor="password"
@@ -71,19 +84,23 @@ export default function Login() {
           />
         </div>
 
-        <div className="flex items-center justify-between">
+        {error && <p className="mb-4 text-sm text-red-600">{error}</p>}
+
+        <div className="flex items-center justify-between gap-3">
           <button
             type="submit"
-            className="bg-emerald-900 hover:bg-emerald-800 text-white font-bold py-2 px-4 rounded"
+            disabled={isSubmitting}
+            className="bg-emerald-900 hover:bg-emerald-800 text-white font-bold py-2 px-4 rounded disabled:opacity-50"
           >
-            Sign In
+            {isSubmitting ? "Signing In..." : "Sign In"}
           </button>
 
           <button
             type="button"
-            className="text-sm text-emerald-500 hover:text-emerald-800"
+            onClick={() => router.push("/dashboard/register")}
+            className="text-sm text-emerald-700 hover:text-emerald-900"
           >
-            Forgot Password?
+            Create account
           </button>
         </div>
       </form>
