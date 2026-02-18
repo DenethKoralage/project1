@@ -11,6 +11,10 @@ namespace backend.API.Models
         [BsonElement("amount")]
         public decimal Amount { get; set; }
 
+        [BsonElement("userId")]
+        [BsonRepresentation(BsonType.ObjectId)]
+        public string UserId { get; set; } = string.Empty;
+
         [BsonElement("description")]
         public string? Description { get; set; }
 

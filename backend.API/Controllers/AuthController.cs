@@ -19,51 +19,93 @@ public class AuthController : ControllerBase
 {
     private readonly MongoDBContext _db;
     private readonly IConfiguration _configuration;
+    private readonly ILogger<AuthController> _logger;
 
-    public AuthController(MongoDBContext db, IConfiguration configuration)
+    public AuthController(MongoDBContext db, IConfiguration configuration, ILogger<AuthController> logger)
     {
         _db = db;
         _configuration = configuration;
+        _logger = logger;
     }
 
     [HttpPost("register")]
     public async Task<ActionResult<AuthResponse>> Register([FromBody] RegisterRequest request)
     {
-        var email = request.Email.Trim().ToLowerInvariant();
-
-        var exists = await _db.Users.Find(u => u.Email == email).AnyAsync();
-        if (exists)
+        if (string.IsNullOrWhiteSpace(request.Email) ||
+            string.IsNullOrWhiteSpace(request.Password) ||
+            string.IsNullOrWhiteSpace(request.FullName))
         {
-            return Conflict(new { message = "An account already exists with this email." });
+            return BadRequest(new { message = "Full name, email, and password are required." });
         }
 
-        var now = DateTime.UtcNow;
-        var user = new User
-        {
-            FullName = request.FullName.Trim(),
-            Designation = request.Designation?.Trim() ?? string.Empty,
-            Email = email,
-            PasswordHash = PasswordHasher.Hash(request.Password),
-            AvgIncome = request.AvgIncome,
-            CreatedAtUtc = now,
-            UpdatedAtUtc = now
-        };
+        var email = request.Email.Trim().ToLowerInvariant();
 
-        await _db.Users.InsertOneAsync(user);
-        var token = GenerateToken(user);
-
-        return Ok(new AuthResponse
+        try
         {
-            Token = token,
-            User = ToAuthUserDto(user)
-        });
+            var exists = await _db.Users.Find(u => u.Email == email).AnyAsync();
+            if (exists)
+            {
+                _logger.LogWarning("Duplicate registration attempt for email: {Email}", email);
+                return Conflict(new { message = "An account already exists with this email." });
+            }
+
+            var now = DateTime.UtcNow;
+            var user = new User
+            {
+                FullName = request.FullName.Trim(),
+                Designation = request.Designation?.Trim() ?? string.Empty,
+                Email = email,
+                PasswordHash = PasswordHasher.Hash(request.Password),
+                AvgIncome = request.AvgIncome,
+                CreatedAtUtc = now,
+                UpdatedAtUtc = now
+            };
+
+            await _db.Users.InsertOneAsync(user);
+            var token = GenerateToken(user);
+
+            return Ok(new AuthResponse
+            {
+                Token = token,
+                User = ToAuthUserDto(user)
+            });
+        }
+        catch (MongoWriteException ex) when (ex.WriteError?.Category == ServerErrorCategory.DuplicateKey)
+        {
+            _logger.LogWarning(ex, "Duplicate key when registering user with email {Email}", email);
+            return Conflict(new { message = "An account already exists with this email." });
+        }
+        catch (MongoException ex)
+        {
+            _logger.LogError(ex, "MongoDB failure while registering user with email {Email}", email);
+            return StatusCode(StatusCodes.Status503ServiceUnavailable, new { message = "Database is unavailable. Please try again." });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Unexpected error while registering user with email {Email}", email);
+            return StatusCode(StatusCodes.Status500InternalServerError, new { message = "Unexpected error while registering user." });
+        }
     }
 
     [HttpPost("login")]
     public async Task<ActionResult<AuthResponse>> Login([FromBody] LoginRequest request)
     {
+        if (string.IsNullOrWhiteSpace(request.Email) || string.IsNullOrWhiteSpace(request.Password))
+        {
+            return BadRequest(new { message = "Email and password are required." });
+        }
+
         var email = request.Email.Trim().ToLowerInvariant();
-        var user = await _db.Users.Find(u => u.Email == email).FirstOrDefaultAsync();
+        User? user;
+        try
+        {
+            user = await _db.Users.Find(u => u.Email == email).FirstOrDefaultAsync();
+        }
+        catch (MongoException ex)
+        {
+            _logger.LogError(ex, "MongoDB failure while logging in user with email {Email}", email);
+            return StatusCode(StatusCodes.Status503ServiceUnavailable, new { message = "Database is unavailable. Please try again." });
+        }
 
         if (user is null || !PasswordHasher.Verify(request.Password, user.PasswordHash))
         {
