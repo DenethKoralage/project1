@@ -245,14 +245,17 @@ export default function BlogPage() {
                   >
                     Category
                   </label>
-                  <input
-                    id="category"
-                    name="category"
-                    value={form.category}
-                    onChange={handleChange}
-                    placeholder="Budgeting, Investing, Income"
-                    className="block w-full rounded-xl border border-slate-200 px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100"
-                  />
+                  <select name="category" id="category" value={form.category} onChange={handleChange} className="block w-full rounded-xl border border-slate-200 px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100">
+                    <option value="">Select a category</option>
+                    <option value="Budgeting">Budgeting</option>
+                    <option value="Investing">Investing</option>
+                    <option value="Income">Income</option>
+                    <option value="Saving">Saving</option>
+                    <option value="Side Hustles">Side Hustles</option>
+                    <option value="Financial Independence">Financial Independence</option>
+                    <option value="Money Mindset">Money Mindset</option>
+                    <option value="General">General</option>
+                  </select>
                 </div>
               </div>
 
