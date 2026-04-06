@@ -3,7 +3,6 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { addBlogPost, ensureSeededPosts } from "@/lib/blogs";
-import { getUser } from "@/lib/auth";
 
 const initialForm = {
   title: "",
@@ -25,18 +24,10 @@ export default function BlogPage() {
   const [form, setForm] = useState(initialForm);
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
-  const [currentUser, setCurrentUser] = useState(() => {
-    if (typeof window === "undefined") {
-      return null;
-    }
-
-    return getUser();
-  });
 
   useEffect(() => {
     function handleStorageRefresh() {
       setPosts(ensureSeededPosts());
-      setCurrentUser(getUser());
     }
 
     window.addEventListener("storage", handleStorageRefresh);
@@ -70,7 +61,7 @@ export default function BlogPage() {
       image: form.image.trim() || "/f4.png",
       excerpt: form.excerpt.trim(),
       content: form.content.trim(),
-      author: currentUser?.fullName || "Community Writer",
+      author: "Community Writer",
     });
 
     setPosts((previous) => [newPost, ...previous]);
@@ -120,9 +111,7 @@ export default function BlogPage() {
                 </p>
               </div>
               <div className="rounded-2xl border border-white/50 bg-white/70 p-4">
-                <p className="text-2xl font-bold text-slate-900">
-                  {currentUser?.fullName ? "Member" : "Guest"}
-                </p>
+                <p className="text-2xl font-bold text-slate-900">Guest</p>
                 <p className="mt-1 text-xs uppercase tracking-[0.18em] text-slate-500">
                   Publishing Mode
                 </p>
@@ -143,9 +132,7 @@ export default function BlogPage() {
               available when you come back.
             </p>
             <div className="mt-6 rounded-2xl border border-white/10 bg-white/5 p-4 text-sm text-slate-200">
-              {currentUser?.fullName
-                ? `Posting as ${currentUser.fullName}.`
-                : "Posting as Community Writer until you log in."}
+              Posting as Community Writer. New posts are stored locally in your browser.
             </div>
           </div>
         </div>

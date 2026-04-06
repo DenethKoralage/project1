@@ -66,17 +66,17 @@ export default function Home() {
 
               {/* LOGIN — FIXED */}
               <Link
-                href="/dashboard/login"
+                href="/blog"
                 className="inline-flex items-center gap-2 rounded-full bg-slate-900/10 px-3 py-1 text-xs font-semibold text-slate-900 transition hover:bg-slate-900/20 hover:scale-105"
               >
-                Login
+                Latest Posts
               </Link>
 
               <Link
-                href="/dashboard/register"
+                href="/contacts"
                 className="inline-flex items-center gap-2 rounded-full bg-slate-900/10 px-3 py-1 text-xs font-semibold text-slate-900 transition hover:bg-slate-900/20 hover:scale-105"
               >
-                Register
+                Contact
               </Link>
             </div>
 

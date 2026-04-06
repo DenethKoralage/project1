@@ -1,0 +1,8 @@
+C:\Users\DenethRandunu\prac project\nextJs\project1\backend.API\obj\Debug\net8.0\backend.API.csproj.AssemblyReference.cache
+C:\Users\DenethRandunu\prac project\nextJs\project1\backend.API\obj\Debug\net8.0\rpswa.dswa.cache.json
+C:\Users\DenethRandunu\prac project\nextJs\project1\backend.API\obj\Debug\net8.0\backend.API.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\DenethRandunu\prac project\nextJs\project1\backend.API\obj\Debug\net8.0\backend.API.AssemblyInfoInputs.cache
+C:\Users\DenethRandunu\prac project\nextJs\project1\backend.API\obj\Debug\net8.0\backend.API.AssemblyInfo.cs
+C:\Users\DenethRandunu\prac project\nextJs\project1\backend.API\obj\Debug\net8.0\backend.API.csproj.CoreCompileInputs.cache
+C:\Users\DenethRandunu\prac project\nextJs\project1\backend.API\obj\Debug\net8.0\backend.API.MvcApplicationPartsAssemblyInfo.cache
+C:\Users\DenethRandunu\prac project\nextJs\project1\backend.API\obj\Debug\net8.0\backend.API.sourcelink.json

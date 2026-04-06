@@ -11,8 +11,8 @@ const primaryLinks = [
 const resourceLinks = [
   { label: "Latest Guides", href: "/blog" },
   { label: "Investor Notes", href: "/portfolio" },
-  { label: "Member Login", href: "/dashboard/login" },
-  { label: "Create Account", href: "/dashboard/register" },
+  { label: "About Our Mission", href: "/about" },
+  { label: "Send Us a Message", href: "/contacts" },
 ];
 
 const socialLinks = [

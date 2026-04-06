@@ -209,10 +209,10 @@ export default function AboutPage() {
               Read Articles
             </Link>
             <Link
-              href="/dashboard/register"
+              href="/contacts"
               className="rounded-xl border border-white/40 px-5 py-3 text-sm font-semibold text-white"
             >
-              Join the Community
+              Contact the Team
             </Link>
           </div>
         </div>
