@@ -16,12 +16,12 @@ public class UserRepository : IUserRepository
 
     public async Task<IEnumerable<User>> GetAllUsersAsync()
     {
-        return await _context.Users.ToListAsync();
+        return await GetUsersWithDetails().ToListAsync();
     }
 
     public async Task<User?> GetUserByIdAsync(int id)
     {
-        return await _context.Users.FindAsync(id);
+        return await GetUsersWithDetails().FirstOrDefaultAsync(user => user.Id == id);
     }
 
     public async Task<User?> GetUserByEmailAsync(string email)
@@ -43,7 +43,6 @@ public class UserRepository : IUserRepository
 
     public async Task UpdateUserAsync(User user)
     {
-        _context.Entry(user).State = EntityState.Modified;
         await _context.SaveChangesAsync();
     }
 
@@ -55,5 +54,72 @@ public class UserRepository : IUserRepository
             _context.Users.Remove(user);
             await _context.SaveChangesAsync();
         }
+    }
+
+    public async Task<int> GetUsersCountAsync()
+    {
+        return await _context.Users.CountAsync();
+    }
+
+    public async Task<IEnumerable<User>> GetUsersByDesignationAsync(string designation)
+    {
+        return await GetUsersWithDetails()
+            .Where(user => user.Designation == designation)
+            .ToListAsync();
+    }
+
+    public async Task<IEnumerable<User>> GetUsersWithIncomeAboveAsync(decimal incomeThreshold)
+    {
+        return await GetUsersWithDetails()
+            .Where(user => user.AVGIncome > incomeThreshold)
+            .ToListAsync();
+    }
+
+    public async Task<IEnumerable<User>> GetUsersWithIncomeBelowAsync(decimal incomeThreshold)
+    {
+        return await GetUsersWithDetails()
+            .Where(user => user.AVGIncome < incomeThreshold)
+            .ToListAsync();
+    }
+
+    public async Task<IEnumerable<User>> GetUsersWithIncomeBetweenAsync(decimal minIncome, decimal maxIncome)
+    {
+        return await GetUsersWithDetails()
+            .Where(user => user.AVGIncome >= minIncome && user.AVGIncome <= maxIncome)
+            .ToListAsync();
+    }
+
+    public async Task<IEnumerable<User>> GetUsersWithIncomeAboveAverageAsync()
+    {
+        if (!await _context.Users.AnyAsync())
+        {
+            return [];
+        }
+
+        var averageIncome = await _context.Users.AverageAsync(user => user.AVGIncome);
+        return await GetUsersWithDetails()
+            .Where(user => user.AVGIncome > averageIncome)
+            .ToListAsync();
+    }
+
+    public async Task<IEnumerable<User>> GetUsersWithIncomeBelowAverageAsync()
+    {
+        if (!await _context.Users.AnyAsync())
+        {
+            return [];
+        }
+
+        var averageIncome = await _context.Users.AverageAsync(user => user.AVGIncome);
+        return await GetUsersWithDetails()
+            .Where(user => user.AVGIncome < averageIncome)
+            .ToListAsync();
+    }
+
+    private IQueryable<User> GetUsersWithDetails()
+    {
+        return _context.Users
+            .Include(user => user.Incomes)
+            .Include(user => user.Expenses)
+            .Include(user => user.Budgets);
     }
 }

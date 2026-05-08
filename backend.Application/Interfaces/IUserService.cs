@@ -9,4 +9,11 @@ public interface IUserService
     Task<UserDto> CreateUserAsync(UserRegistrationDto userRegistrationDto);
     Task<bool> UpdateUserAsync(int id, UserRegistrationDto userRegistrationDto);
     Task<bool> DeleteUserAsync(int id);
+    Task<int> GetUsersCountAsync();
+    Task<IEnumerable<UserDto>> GetUsersByDesignationAsync(string designation);
+    Task<IEnumerable<UserDto>> GetUsersWithIncomeAboveAsync(decimal incomeThreshold);
+    Task<IEnumerable<UserDto>> GetUsersWithIncomeBelowAsync(decimal incomeThreshold);
+    Task<IEnumerable<UserDto>> GetUsersWithIncomeBetweenAsync(decimal minIncome, decimal maxIncome);
+    Task<IEnumerable<UserDto>> GetUsersWithIncomeAboveAverageAsync();
+    Task<IEnumerable<UserDto>> GetUsersWithIncomeBelowAverageAsync();
 }

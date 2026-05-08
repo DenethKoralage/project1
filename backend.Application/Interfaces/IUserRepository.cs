@@ -11,4 +11,11 @@ public interface IUserRepository
     Task<User> CreateUserAsync(User user);
     Task UpdateUserAsync(User user);
     Task DeleteUserAsync(int id);
+    Task<int> GetUsersCountAsync();
+    Task<IEnumerable<User>> GetUsersByDesignationAsync(string designation);
+    Task<IEnumerable<User>> GetUsersWithIncomeAboveAsync(decimal incomeThreshold);
+    Task<IEnumerable<User>> GetUsersWithIncomeBelowAsync(decimal incomeThreshold);
+    Task<IEnumerable<User>> GetUsersWithIncomeBetweenAsync(decimal minIncome, decimal maxIncome);
+    Task<IEnumerable<User>> GetUsersWithIncomeAboveAverageAsync();
+    Task<IEnumerable<User>> GetUsersWithIncomeBelowAverageAsync();
 }
