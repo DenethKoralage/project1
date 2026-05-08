@@ -1,0 +1,12 @@
+C:\Users\DenethRandunu\prac project\nextJs\project1\backend.Domain\bin\Debug\net10.0\backend.Domain.deps.json
+C:\Users\DenethRandunu\prac project\nextJs\project1\backend.Domain\bin\Debug\net10.0\backend.Domain.dll
+C:\Users\DenethRandunu\prac project\nextJs\project1\backend.Domain\bin\Debug\net10.0\backend.Domain.pdb
+C:\Users\DenethRandunu\prac project\nextJs\project1\backend.Domain\obj\Debug\net10.0\backend.Domain.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\DenethRandunu\prac project\nextJs\project1\backend.Domain\obj\Debug\net10.0\backend.Domain.AssemblyInfoInputs.cache
+C:\Users\DenethRandunu\prac project\nextJs\project1\backend.Domain\obj\Debug\net10.0\backend.Domain.AssemblyInfo.cs
+C:\Users\DenethRandunu\prac project\nextJs\project1\backend.Domain\obj\Debug\net10.0\backend.Domain.csproj.CoreCompileInputs.cache
+C:\Users\DenethRandunu\prac project\nextJs\project1\backend.Domain\obj\Debug\net10.0\backend.Domain.sourcelink.json
+C:\Users\DenethRandunu\prac project\nextJs\project1\backend.Domain\obj\Debug\net10.0\backend.Domain.dll
+C:\Users\DenethRandunu\prac project\nextJs\project1\backend.Domain\obj\Debug\net10.0\refint\backend.Domain.dll
+C:\Users\DenethRandunu\prac project\nextJs\project1\backend.Domain\obj\Debug\net10.0\backend.Domain.pdb
+C:\Users\DenethRandunu\prac project\nextJs\project1\backend.Domain\obj\Debug\net10.0\ref\backend.Domain.dll

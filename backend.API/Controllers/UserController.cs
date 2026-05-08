@@ -1,61 +1,65 @@
 using Microsoft.AspNetCore.Mvc;
-using backend.API.Models;
+using backend.Application.DTOs;
+using backend.Application.Interfaces;
 
 [ApiController]
 [Route("api/[controller]")]
 public class UserController : ControllerBase
 {
-    private readonly IUserRepository _userRepository;
-    public UserController(IUserRepository userRepository)
+    private readonly IUserService _userService;
+
+    public UserController(IUserService userService)
     {
-        _userRepository = userRepository;
+        _userService = userService;
     }
+
     [HttpGet]
-    public async Task<ActionResult<IEnumerable<User>>> GetUsers()
+    public async Task<ActionResult<IEnumerable<UserDto>>> GetUsers()
     {
-        var users = await _userRepository.GetAllUsersAsync();
+        var users = await _userService.GetAllUsersAsync();
         return Ok(users);
     }
+
     [HttpGet("{id}")]
-    public async Task<ActionResult<User>> GetUser(int id)
+    public async Task<ActionResult<UserDto>> GetUser(int id)
     {
-        var user = await _userRepository.GetUserByIdAsync(id);
+        var user = await _userService.GetUserByIdAsync(id);
         if (user == null)
         {
             return NotFound();
         }
+
         return Ok(user);
     }
+
     [HttpPost]
-    public async Task<ActionResult<User>> CreateUser(User user)
+    public async Task<ActionResult<UserDto>> CreateUser(UserRegistrationDto userRegistrationDto)
     {
-        var createdUser = await _userRepository.CreateUserAsync(user);
+        var createdUser = await _userService.CreateUserAsync(userRegistrationDto);
         return CreatedAtAction(nameof(GetUser), new { id = createdUser.Id }, createdUser);
     }
+
     [HttpPut("{id}")]
-    public async Task<IActionResult> UpdateUser(int id, User user)
+    public async Task<IActionResult> UpdateUser(int id, UserRegistrationDto userRegistrationDto)
     {
-        if (id != user.Id)
-        {
-            return BadRequest();
-        }
-        var existingUser = await _userRepository.GetUserByIdAsync(id);
-        if (existingUser == null)
+        var updated = await _userService.UpdateUserAsync(id, userRegistrationDto);
+        if (!updated)
         {
             return NotFound();
         }
-        await _userRepository.UpdateUserAsync(user);
+
         return NoContent();
     }
+
     [HttpDelete("{id}")]
     public async Task<IActionResult> DeleteUser(int id)
     {
-        var existingUser = await _userRepository.GetUserByIdAsync(id);
-        if (existingUser == null)
+        var deleted = await _userService.DeleteUserAsync(id);
+        if (!deleted)
         {
             return NotFound();
         }
-        await _userRepository.DeleteUserAsync(id);
+
         return NoContent();
     }
 }

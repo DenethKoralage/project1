@@ -1,5 +1,5 @@
-using backend.API.Models;
-using Microsoft.EntityFrameworkCore;
+using backend.Application;
+using backend.Infrastructure;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -16,14 +16,8 @@ builder.Services.AddCors(options =>
     });
 });
 
-// Database Configuration
-var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
-
-builder.Services.AddDbContext<AppDbContext>(options =>
-    options.UseSqlServer(connectionString));
-
-// Register Repositories and Services
-builder.Services.AddScoped<IUserRepository, UserRepository>();
+builder.Services.AddApplication();
+builder.Services.AddInfrastructure(builder.Configuration);
 
 var app = builder.Build();
 
