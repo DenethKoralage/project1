@@ -8,4 +8,10 @@ public class User
     public string Password { get; set; } = string.Empty;
     public string Designation { get; set; } = string.Empty;
     public int AVGIncome { get; set; }
+    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+    public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
+    public List<Expense> Expenses { get; set; } = new List<Expense>();
+    public List<Budget> Budgets { get; set; } = new List<Budget>();
+    public List<Income> Incomes { get; set; } = new List<Income>();
+
 }

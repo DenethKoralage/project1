@@ -10,4 +10,7 @@ public class AppDbContext : DbContext
     }
 
     public DbSet<User> Users => Set<User>();
+    public DbSet<Expense> Expenses => Set<Expense>();
+    public DbSet<Budget> Budgets => Set<Budget>();
+    public DbSet<Income> Incomes => Set<Income>();
 }

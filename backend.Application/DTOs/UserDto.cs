@@ -7,4 +7,9 @@ public class UserDto
     public string Email { get; set; } = string.Empty;
     public string Designation { get; set; } = string.Empty;
     public int AVGIncome { get; set; }
+    public DateTime CreatedAt { get; set; }
+    public DateTime UpdatedAt { get; set; }
+    public List<IncomeDto> Incomes { get; internal set; } = new List<IncomeDto>();
+    public List<ExpenseDto> Expenses { get; internal set; } = new List<ExpenseDto>();
+    public List<BudgetDto> Budgets { get; internal set; } = new List<BudgetDto>();
 }
