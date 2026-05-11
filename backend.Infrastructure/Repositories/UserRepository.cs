@@ -26,12 +26,14 @@ public class UserRepository : IUserRepository
 
     public async Task<User?> GetUserByEmailAsync(string email)
     {
-        return await _context.Users.FirstOrDefaultAsync(user => user.Email == email);
+        var normalizedEmail = NormalizeEmail(email);
+        return await _context.Users.FirstOrDefaultAsync(user => user.Email.ToLower() == normalizedEmail);
     }
 
     public async Task<bool> EmailExistsAsync(string email)
     {
-        return await _context.Users.AnyAsync(user => user.Email == email);
+        var normalizedEmail = NormalizeEmail(email);
+        return await _context.Users.AnyAsync(user => user.Email.ToLower() == normalizedEmail);
     }
 
     public async Task<User> CreateUserAsync(User user)
@@ -121,5 +123,10 @@ public class UserRepository : IUserRepository
             .Include(user => user.Incomes)
             .Include(user => user.Expenses)
             .Include(user => user.Budgets);
+    }
+
+    private static string NormalizeEmail(string email)
+    {
+        return email.Trim().ToLowerInvariant();
     }
 }

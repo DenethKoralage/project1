@@ -28,17 +28,19 @@ public class UserService : IUserService
 
     public async Task<UserDto> CreateUserAsync(UserRegistrationDto userRegistrationDto)
     {
-        if (await _userRepository.EmailExistsAsync(userRegistrationDto.Email))
+        var normalizedEmail = NormalizeEmail(userRegistrationDto.Email);
+
+        if (await _userRepository.EmailExistsAsync(normalizedEmail))
         {
             throw new InvalidOperationException("User with this email already exists.");
         }
 
         var user = new User
         {
-            Name = userRegistrationDto.Name,
-            Email = userRegistrationDto.Email,
+            Name = userRegistrationDto.Name.Trim(),
+            Email = normalizedEmail,
             Password = PasswordHelper.HashPassword(userRegistrationDto.Password),
-            Designation = userRegistrationDto.Designation,
+            Designation = userRegistrationDto.Designation.Trim(),
             AVGIncome = userRegistrationDto.AVGIncome,
             CreatedAt = DateTime.UtcNow,
             UpdatedAt = DateTime.UtcNow,
@@ -59,19 +61,20 @@ public class UserService : IUserService
             return false;
         }
 
-        var existingUser = await _userRepository.GetUserByEmailAsync(userRegistrationDto.Email);
+        var normalizedEmail = NormalizeEmail(userRegistrationDto.Email);
+        var existingUser = await _userRepository.GetUserByEmailAsync(normalizedEmail);
         if (existingUser != null && existingUser.Id != id)
         {
             throw new InvalidOperationException("User with this email already exists.");
         }
 
-        user.Name = userRegistrationDto.Name;
-        user.Email = userRegistrationDto.Email;
+        user.Name = userRegistrationDto.Name.Trim();
+        user.Email = normalizedEmail;
         if (!string.IsNullOrWhiteSpace(userRegistrationDto.Password))
         {
             user.Password = PasswordHelper.HashPassword(userRegistrationDto.Password);
         }
-        user.Designation = userRegistrationDto.Designation;
+        user.Designation = userRegistrationDto.Designation.Trim();
         user.AVGIncome = userRegistrationDto.AVGIncome;
         user.UpdatedAt = DateTime.UtcNow;
 
@@ -135,6 +138,11 @@ public class UserService : IUserService
     {
         var users = await _userRepository.GetUsersWithIncomeBelowAverageAsync();
         return users.Select(MapToDto);
+    }
+
+    private static string NormalizeEmail(string email)
+    {
+        return email.Trim().ToLowerInvariant();
     }
 
     private static UserDto MapToDto(User user)

@@ -1,6 +1,7 @@
 using backend.Application.Interfaces;
 using backend.Infrastructure.Data;
 using backend.Infrastructure.Repositories;
+using backend.Infrastructure.Services;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -19,6 +20,7 @@ public static class DependencyInjection
             options.UseSqlServer(connectionString));
 
         services.AddScoped<IUserRepository, UserRepository>();
+        services.AddScoped<IJwtTokenService, JwtTokenService>();
 
         return services;
     }
