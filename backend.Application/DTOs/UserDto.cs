@@ -6,6 +6,9 @@ public class UserDto
     public string Name { get; set; } = string.Empty;
     public string Email { get; set; } = string.Empty;
     public string Designation { get; set; } = string.Empty;
+    public string Workplace { get; set; } = string.Empty;
+    public string HomeAddress { get; set; } = string.Empty;
+    public string HomeCity { get; set; }
     public int AVGIncome { get; set; }
     public DateTime CreatedAt { get; set; }
     public DateTime UpdatedAt { get; set; }
