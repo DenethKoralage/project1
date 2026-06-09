@@ -175,12 +175,16 @@ public class UserService : IUserService
             Budgets = user.Budgets.Select(b => new BudgetDto
             {
                 Id = b.Id,
+                UserId = b.UserId,
                 Name = b.Name,
                 Amount = b.Amount,
+                Title = b.Title,
                 Category = b.Category,
                 StartDate = b.StartDate,
                 EndDate = b.EndDate,
                 Description = b.Description,
+                TotalBudget = b.TotalBudget,
+                RemainingBudget = b.RemainingBudget
             }).ToList(),
         };
     }

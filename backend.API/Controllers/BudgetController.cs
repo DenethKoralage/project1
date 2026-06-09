@@ -64,8 +64,19 @@ public class BudgetController : ControllerBase
             return Unauthorized();
         }
 
-        var createdBudget = await _budgetService.CreateBudgetAsync(budgetDto, userId.Value);
-        return CreatedAtAction(nameof(GetBudget), new { id = createdBudget.Id }, createdBudget);
+        try
+        {
+            var createdBudget = await _budgetService.CreateBudgetAsync(budgetDto, userId.Value);
+            return CreatedAtAction(nameof(GetBudget), new { id = createdBudget.Id }, createdBudget);
+        }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
     }
 
     [HttpPut("{id:guid}")]
@@ -77,8 +88,19 @@ public class BudgetController : ControllerBase
             return Unauthorized();
         }
 
-        var updated = await _budgetService.UpdateBudgetAsync(id, budgetDto, userId.Value);
-        return updated ? NoContent() : NotFound();
+        try
+        {
+            var updated = await _budgetService.UpdateBudgetAsync(id, budgetDto, userId.Value);
+            return updated ? NoContent() : NotFound();
+        }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
     }
 
     [HttpDelete("{id:guid}")]

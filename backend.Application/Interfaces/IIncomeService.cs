@@ -1,9 +1,8 @@
 ﻿using backend.Application.DTOs;
-using backend.Domain.Entities;
 
 namespace backend.Application.Interfaces;
 
-public interface IIncomeRepository
+public interface IIncomeService
 {
     Task<IEnumerable<IncomeDto>> GetAllIncomesAsync();
     Task<IncomeDto?> GetIncomeByIdAsync(Guid id, int userId);
@@ -19,6 +18,4 @@ public interface IIncomeRepository
     Task<decimal> GetTotalIncomesByUserIdAndCategoryAndYearAsync(int userId, string category, int year);
     Task<decimal> GetTotalIncomesByUserIdAndCategoryAsync(int userId, string category);
     Task<decimal> GetTotalIncomesByUserIdAndYearAsync(int userId, int year);
-    Task CreateIncomeAsync(Income income);
-    Task UpdateIncomeAsync(IncomeDto income);
 }

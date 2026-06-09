@@ -64,8 +64,7 @@ export default function SignupPage() {
             Sign up with the same fields your backend user model expects.
           </h1>
           <p className="max-w-2xl text-sm leading-6 text-slate-600 md:text-base">
-            The registration form sends `name`, `email`, `password`,
-            `designation`, and `avgIncome`, which matches the current API shape.
+            After the registration is successful, you will be able to experience so much special features.
           </p>
         </div>
 

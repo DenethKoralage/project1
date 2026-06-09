@@ -1,5 +1,4 @@
 using backend.Application.DTOs;
-
 namespace backend.Application.Interfaces;
 
 public interface IBudgetService

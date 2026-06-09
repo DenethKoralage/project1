@@ -40,26 +40,25 @@ public class BudgetService : IBudgetService
         {
             UserId = userId,
             TotalBudget = totalBudget,
-            RemainingBudget = remainingBudget
+            RemainingBudget = remainingBudget,
+            Amount = totalBudget
         };
     }
 
     public async Task<BudgetDto> CreateBudgetAsync(BudgetDto budgetDto, int userId)
     {
-        var budget = new Budget
-        {
-            Id = budgetDto.Id == Guid.Empty ? Guid.NewGuid() : budgetDto.Id,
-            UserId = userId,
-            Name = budgetDto.Name.Trim(),
-            Amount = budgetDto.Amount,
-            Title = budgetDto.Title.Trim(),
-            Category = budgetDto.Category.Trim(),
-            StartDate = budgetDto.StartDate,
-            EndDate = budgetDto.EndDate,
-            Description = budgetDto.Description.Trim(),
-            TotalBudget = budgetDto.TotalBudget,
-            RemainingBudget = budgetDto.RemainingBudget
-        };
+        var amount = GetBudgetAmount(budgetDto);
+        var remainingBudget = GetRemainingBudget(budgetDto, amount);
+        var budget = Budget.Create(
+            userId,
+            budgetDto.Name,
+            amount,
+            budgetDto.Title,
+            budgetDto.Category,
+            budgetDto.StartDate,
+            budgetDto.EndDate,
+            budgetDto.Description,
+            remainingBudget);
 
         var createdBudget = await _budgetRepository.CreateBudgetAsync(budget);
         return MapToDto(createdBudget);
@@ -73,15 +72,17 @@ public class BudgetService : IBudgetService
             return false;
         }
 
-        budget.Name = budgetDto.Name.Trim();
-        budget.Amount = budgetDto.Amount;
-        budget.Title = budgetDto.Title.Trim();
-        budget.Category = budgetDto.Category.Trim();
-        budget.StartDate = budgetDto.StartDate;
-        budget.EndDate = budgetDto.EndDate;
-        budget.Description = budgetDto.Description.Trim();
-        budget.TotalBudget = budgetDto.TotalBudget;
-        budget.RemainingBudget = budgetDto.RemainingBudget;
+        var amount = GetBudgetAmount(budgetDto);
+        var remainingBudget = GetRemainingBudget(budgetDto, amount);
+        budget.UpdateDetails(
+            budgetDto.Name,
+            amount,
+            budgetDto.Title,
+            budgetDto.Category,
+            budgetDto.StartDate,
+            budgetDto.EndDate,
+            budgetDto.Description,
+            remainingBudget);
 
         await _budgetRepository.UpdateBudgetAsync(budget);
         return true;
@@ -115,5 +116,17 @@ public class BudgetService : IBudgetService
             TotalBudget = budget.TotalBudget,
             RemainingBudget = budget.RemainingBudget
         };
+    }
+
+    private static decimal GetBudgetAmount(BudgetDto budgetDto)
+    {
+        return budgetDto.Amount > 0 ? budgetDto.Amount : budgetDto.TotalBudget;
+    }
+
+    private static decimal GetRemainingBudget(BudgetDto budgetDto, decimal amount)
+    {
+        return budgetDto.RemainingBudget == 0 && budgetDto.TotalBudget == 0
+            ? amount
+            : budgetDto.RemainingBudget;
     }
 }

@@ -30,9 +30,21 @@ public class AppDbContext : DbContext
             entity.HasIndex(user => user.Email).IsUnique();
         });
 
-        modelBuilder.Entity<Budget>()
-            .Property(budget => budget.Amount)
-            .HasPrecision(18, 2);
+        modelBuilder.Entity<Budget>(entity =>
+        {
+            entity.Property(budget => budget.Name).HasMaxLength(120);
+            entity.Property(budget => budget.Title).HasMaxLength(120);
+            entity.Property(budget => budget.Category).HasMaxLength(120);
+            entity.Property(budget => budget.Description).HasMaxLength(512);
+            entity.Property(budget => budget.Amount).HasPrecision(18, 2);
+            entity.Property(budget => budget.TotalBudget).HasPrecision(18, 2);
+            entity.Property(budget => budget.RemainingBudget).HasPrecision(18, 2);
+
+            entity.HasOne(budget => budget.User)
+                .WithMany(user => user.Budgets)
+                .HasForeignKey(budget => budget.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
 
         modelBuilder.Entity<Expense>()
             .Property(expense => expense.Amount)
