@@ -7,8 +7,8 @@ public interface IExpenseRepository
 {
     Task<IEnumerable<ExpenseDto>> GetAllExpensesAsync();
     Task<ExpenseDto?> GetExpenseByIdAsync(Guid id, int userId);
-    Task<ExpenseDto> CreateExpenseAsync(ExpenseDto expenseDto, int userId);
-    Task<bool> UpdateExpenseAsync(Guid id, ExpenseDto expenseDto, int userId);
+    //Task<ExpenseDto> CreateExpenseAsync(ExpenseDto expenseDto, int userId);
+    //Task<bool> UpdateExpenseAsync(Guid id, ExpenseDto expenseDto, int userId);
     Task<bool> DeleteExpenseAsync(Guid id, int userId);
     Task<IEnumerable<ExpenseDto>> GetExpensesByUserIdAsync(int userId);
     Task<ExpenseDto> GetExpensesCountAsync(int userId);
@@ -20,5 +20,6 @@ public interface IExpenseRepository
     Task<decimal> GetTotalExpensesByUserIdAndCategoryAsync(int userId, string category);
     Task<decimal> GetTotalExpensesByUserIdAndYearAsync(int userId, int year);
     Task CreateExpenseAsync(Expense expense);
-    Task UpdateExpenseAsync(ExpenseDto expense);
+    Task UpdateExpenseAsync(ExpenseDto existingExpense);
+    Task<IEnumerable<ExpenseDto>> GetAllExpensesByUserIdAsync(int userId);
 }

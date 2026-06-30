@@ -154,4 +154,10 @@ public class ExpenseService : IExpenseService
 
         return true;
     }
+
+    public async Task<IEnumerable<ExpenseDto>> GetAllExpensesByUserIdAsync(
+        int userId)
+    {
+        return await _expenseRepository.GetAllExpensesByUserIdAsync(userId);
+    }
 }

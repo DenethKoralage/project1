@@ -198,6 +198,14 @@ namespace backend.API.Controllers
             return Ok(count);
         }
 
+        [HttpGet("AllExpensesByUserId/{userId}")]
+        public async Task<ActionResult<IEnumerable<ExpenseDto>>> GetAllExpensesByUserId(
+            int userId)
+        {
+            var expenses = await _expenseService.GetAllExpensesByUserIdAsync(userId);
+            return Ok(expenses);
+        }
+
         private int? GetCurrentUserId()
         {
             var userIdClaim = User.Claims.FirstOrDefault(

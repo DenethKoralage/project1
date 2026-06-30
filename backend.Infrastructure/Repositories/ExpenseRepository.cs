@@ -214,4 +214,20 @@ public class ExpenseRepository : IExpenseRepository
 
         await _context.SaveChangesAsync();
     }
+
+    public async Task<IEnumerable<ExpenseDto>> GetAllExpensesByUserIdAsync(int userId)
+    {
+        return await _context.Expenses
+            .Where(i => i.UserId == userId)
+            .Select(i => new ExpenseDto
+            {
+                Id = i.Id,
+                Amount = i.Amount,
+                Category = i.Category,
+                ExpenseDate = i.ExpenseDate,
+                Description = i.Description
+            })
+            .ToListAsync();
+    }
+
 }

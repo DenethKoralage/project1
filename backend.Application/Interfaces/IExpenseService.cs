@@ -18,4 +18,5 @@ public interface IExpenseService
     Task<decimal> GetTotalExpensesByUserIdAndCategoryAndYearAsync(int userId, string category, int year);
     Task<decimal> GetTotalExpensesByUserIdAndCategoryAsync(int userId, string category);
     Task<decimal> GetTotalExpensesByUserIdAndYearAsync(int userId, int year);
+    Task<IEnumerable<ExpenseDto>> GetAllExpensesByUserIdAsync(int userId);
 }
