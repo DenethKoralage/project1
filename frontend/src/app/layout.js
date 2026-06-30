@@ -1,6 +1,7 @@
 import "./globals.css";
 import Navbar from "@/components/navbar/Navbar";
 import Footer from "@/components/footer/Footer";
+import { AuthProvider } from "@/context/AuthContext";
 
 export const metadata = {
   title: "The Financial Freedom",
@@ -11,11 +12,13 @@ export default function RootLayout({ children }) {
   return (
     <html lang="en">
       <body className="bg-background text-foreground min-h-screen flex flex-col items-center pt-28">
-        <Navbar />
-        <div className="flex-grow w-full max-w-5xl px-4 ">
-          {children}
-        </div>
-        <Footer />
+        <AuthProvider>
+          <Navbar />
+          <div className="flex-grow w-full max-w-5xl px-4 ">
+            {children}
+          </div>
+          <Footer />
+        </AuthProvider>
       </body>
     </html>
   );

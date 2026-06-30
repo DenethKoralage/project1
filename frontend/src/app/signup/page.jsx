@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { postAuth } from "@/lib/authApi";
+import { useAuth } from "@/context/AuthContext";
 
 const initialForm = {
   name: "",
@@ -15,6 +16,7 @@ const initialForm = {
 
 export default function SignupPage() {
   const router = useRouter();
+  const { login } = useAuth();
   const [form, setForm] = useState(initialForm);
   const [status, setStatus] = useState({ type: "", message: "" });
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -25,7 +27,7 @@ export default function SignupPage() {
     setStatus({ type: "", message: "" });
 
     try {
-      await postAuth("/auth/register", {
+      const data = await postAuth("/auth/register", {
         name: form.name,
         email: form.email,
         password: form.password,
@@ -33,15 +35,18 @@ export default function SignupPage() {
         avgIncome: Number(form.avgIncome),
       });
 
+      // Auto-login: persist the session returned by the register endpoint.
+      login(data);
+
       setStatus({
         type: "success",
-        message: "Account created. Redirecting you to login...",
+        message: "Account created! Redirecting to your dashboard...",
       });
       setForm(initialForm);
 
       window.setTimeout(() => {
-        router.push("/login");
-      }, 1000);
+        router.push("/profileDashboard");
+      }, 800);
     } catch (error) {
       setStatus({
         type: "error",
@@ -113,8 +118,8 @@ export default function SignupPage() {
                 }))
               }
               className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-slate-900 outline-none transition focus:border-sky-500"
-              placeholder="At least 6 characters"
-              minLength={6}
+              placeholder="At least 8 characters"
+              minLength={8}
               required
             />
           </label>

@@ -1,8 +1,10 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { postAuth } from "@/lib/authApi";
+import { useAuth } from "@/context/AuthContext";
 
 const initialForm = {
   email: "",
@@ -10,6 +12,8 @@ const initialForm = {
 };
 
 export default function LoginPage() {
+  const router = useRouter();
+  const { login } = useAuth();
   const [form, setForm] = useState(initialForm);
   const [status, setStatus] = useState({ type: "", message: "" });
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -25,11 +29,19 @@ export default function LoginPage() {
         password: form.password,
       });
 
+      // Persist the session so the whole app knows who is logged in.
+      login(data);
+
       setStatus({
         type: "success",
-        message: `${data.user.name}, you are signed in as ${data.user.designation}.`,
+        message: `Welcome back, ${data.user.name}! Redirecting...`,
       });
       setForm(initialForm);
+
+      // Redirect to the profile dashboard after a short delay.
+      window.setTimeout(() => {
+        router.push("/profileDashboard");
+      }, 800);
     } catch (error) {
       setStatus({
         type: "error",
@@ -87,7 +99,7 @@ export default function LoginPage() {
               }
               className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-slate-900 outline-none transition focus:border-emerald-500"
               placeholder="Enter your password"
-              minLength={6}
+              minLength={8}
               required
             />
           </label>

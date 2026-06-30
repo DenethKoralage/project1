@@ -259,6 +259,32 @@
   },
   {
     "ContainingType": "backend.API.Controllers.ExpenseController",
+    "Method": "GetAllExpensesByUserId",
+    "RelativePath": "api/Expense/AllExpensesByUserId/{userId}",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "userId",
+        "Type": "System.Int32",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": [
+      {
+        "Type": "System.Collections.Generic.IEnumerable\u00601[[backend.Application.DTOs.ExpenseDto, backend.Application, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 200
+      }
+    ]
+  },
+  {
+    "ContainingType": "backend.API.Controllers.ExpenseController",
     "Method": "GetExpensesCount",
     "RelativePath": "api/Expense/count/{userId}",
     "HttpMethod": "GET",
