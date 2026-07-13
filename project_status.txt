@@ -1,0 +1,15 @@
+Project Status Report
+=====================
+Timestamp: 2026-07-13T11:09:33+05:30
+Working Directory: C:\Users\DenethRandunu\prac project\nextJs\project1
+Workspace Root: C:\Users\DenethRandunu\prac project\nextJs\project1
+
+Active File:
+frontend\src\app\profileDashboard\page.jsx
+
+Open Tabs:
+- frontend/src/app/portfolio/[category]/page.jsx
+- frontend/src/app/profileDashboard/page.jsx
+
+Visible Files:
+frontend\src\app\profileDashboard\page.jsx

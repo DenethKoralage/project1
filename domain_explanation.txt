@@ -1,0 +1,83 @@
+DOMAIN EXPLANATION
+=================
+
+ENVIRONMENT DETAILS
+-------------------
+Current Time: 2026-07-13T11:10:32+05:30
+Working Directory: C:\Users\DenethRandunu\prac project\nextJs\project1
+Workspace Root: C:\Users\DenethRandunu\prac project\nextJs\project1
+
+PROJECT STRUCTURE
+-----------------
+This appears to be a Next.js 13+ application using the App Router structure, located in the frontend directory.
+
+Key Directories:
+- frontend/ - Main application code
+  - src/ - Source code directory
+    - app/ - App Router directory (Next.js 13+)
+      - portfolio/ - Portfolio section with dynamic routing
+        - [category]/ - Dynamic route for portfolio categories
+          - page.jsx - Category-specific portfolio page
+      - profileDashboard/ - Profile dashboard section
+        - page.jsx - Profile dashboard page (currently visible)
+
+CURRENT WORKSPACE STATE
+----------------------
+Open Tabs:
+1. frontend/src/app/portfolio/[category]/page.jsx
+   - Dynamic route handler for portfolio categories
+   - Likely displays portfolio items filtered by category
+
+2. frontend/src/app/profileDashboard/page.jsx
+   - Currently visible file
+   - Profile dashboard interface
+   - Likely shows user profile information, settings, or analytics
+
+Visible File:
+frontend\src\app\profileDashboard\page.jsx
+- This is the currently active file being viewed/edited
+
+TECHNOLOGY STACK
+----------------
+- Framework: Next.js 13+ (App Router)
+- Language: JavaScript (.jsx files indicate JavaScript with JSX syntax)
+- Styling: Likely CSS Modules, Tailwind, or similar (not visible from file extensions)
+- State Management: Possibly React Context, Redux, or Zustand (not visible from files)
+- Styling Approach: Likely CSS-in-JS or utility-first CSS based on file extension
+
+CURRENT WORKFLOW CONTEXT
+------------------------
+The user is currently viewing/editing the profile dashboard page, suggesting they might be:
+1. Working on user profile functionality
+2. Modifying dashboard widgets or layout
+3. Implementing user settings or preferences
+4. Debugging profile-related features
+
+The fact that both portfolio category page and profile dashboard are open suggests they might be working on:
+- User profile integration with portfolio items
+- Dashboard that displays portfolio statistics
+- User-specific portfolio views
+
+PROJECT CHARACTERISTICS
+-----------------------
+- Modern Next.js application using the App Router
+- Feature-oriented organization (portfolio, profileDashboard)
+- Dynamic routing for content categorization ([category])
+- Dashboard-style interface for user profiles
+- Likely a personal portfolio/dashboard application for professionals or developers
+
+RECENT ACTIVITY INDICATORS
+--------------------------
+- User has been working on portfolio category page
+- Currently focused on profile dashboard page
+- Active development session in progress
+- Environment timestamp shows current work session (July 13, 2026, 11:10 AM)
+
+NEXT STEPS / POSSIBLE ACTIONS
+-----------------------------
+Based on the open files, potential next steps could include:
+1. Implementing profile-to-portfolio connections
+2. Adding user-specific portfolio filtering
+3. Enhancing dashboard with portfolio analytics
+4. Fixing bugs in profile dashboard functionality
+5. Improving UI/UX of profile dashboard
