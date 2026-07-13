@@ -8,7 +8,7 @@ public class UserDto
     public string Designation { get; set; } = string.Empty;
     public string Workplace { get; set; } = string.Empty;
     public string HomeAddress { get; set; } = string.Empty;
-    public string HomeCity { get; set; }
+    public string HomeCity { get; set; } = string.Empty;
     public int AVGIncome { get; set; }
     public DateTime CreatedAt { get; set; }
     public DateTime UpdatedAt { get; set; }

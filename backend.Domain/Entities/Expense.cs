@@ -30,9 +30,9 @@ public class Expense
             Id = Guid.NewGuid(),
             UserId = userId,
             Amount = amount,
-            Category = category,
+            Category = category.Trim(),
             ExpenseDate = expenseDate,
-            Description = description
+            Description = description.Trim()
         };
         return expense;
     }
@@ -53,9 +53,9 @@ public class Expense
             throw new ArgumentException("Expense category is required.", nameof(category));
         }
         Amount = amount;
-        Category = category;
+        Category = category.Trim();
         ExpenseDate = expenseDate;
-        Description = description;
+        Description = description.Trim();
     }
 
 }

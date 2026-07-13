@@ -145,10 +145,17 @@ public class ExpenseService : IExpenseService
         if (existingExpense == null)
             return false;
 
-        existingExpense.Amount = expenseDto.Amount;
-        existingExpense.Category = expenseDto.Category;
-        existingExpense.ExpenseDate = expenseDto.ExpenseDate;
-        existingExpense.Description = expenseDto.Description;
+        var validatedExpense = Expense.Create(
+            userId,
+            expenseDto.Amount,
+            expenseDto.Category,
+            expenseDto.ExpenseDate,
+            expenseDto.Description);
+
+        existingExpense.Amount = validatedExpense.Amount;
+        existingExpense.Category = validatedExpense.Category;
+        existingExpense.ExpenseDate = validatedExpense.ExpenseDate;
+        existingExpense.Description = validatedExpense.Description;
 
         await _expenseRepository.UpdateExpenseAsync(existingExpense);
 

@@ -3,8 +3,12 @@
 public class ExpenseDto
 {
     public Guid Id { get; set; }
+    [System.ComponentModel.DataAnnotations.Range(typeof(decimal), "0.01", "79228162514264337593543950335")]
     public decimal Amount { get; set; }
+    [System.ComponentModel.DataAnnotations.Required]
+    [System.ComponentModel.DataAnnotations.StringLength(120)]
     public string Category { get; set; } = string.Empty;
     public DateTime ExpenseDate { get; set; }
+    [System.ComponentModel.DataAnnotations.StringLength(512)]
     public string Description { get; set; } = string.Empty;
 }

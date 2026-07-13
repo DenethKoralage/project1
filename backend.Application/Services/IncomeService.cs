@@ -17,16 +17,13 @@ public class IncomeService : IIncomeService
         IncomeDto incomeDto,
         int userId)
     {
-        var income = new Income
-        {
-            Id = Guid.NewGuid(),
-            Amount = incomeDto.Amount,
-            Source = incomeDto.Source,
-            Category = incomeDto.Category,
-            IncomeDate = incomeDto.IncomeDate,
-            Description = incomeDto.Description,
-            UserId = userId
-        };
+        var income = Income.Create(
+            userId,
+            incomeDto.Amount,
+            incomeDto.Source,
+            incomeDto.Category,
+            incomeDto.IncomeDate,
+            incomeDto.Description);
 
         await _incomeRepository.CreateIncomeAsync(income);
 
@@ -144,11 +141,19 @@ public class IncomeService : IIncomeService
         if (existingIncome == null)
             return false;
 
-        existingIncome.Amount = incomeDto.Amount;
-        existingIncome.Source = incomeDto.Source;
-        existingIncome.Category = incomeDto.Category;
-        existingIncome.IncomeDate = incomeDto.IncomeDate;
-        existingIncome.Description = incomeDto.Description;
+        var validatedIncome = Income.Create(
+            userId,
+            incomeDto.Amount,
+            incomeDto.Source,
+            incomeDto.Category,
+            incomeDto.IncomeDate,
+            incomeDto.Description);
+
+        existingIncome.Amount = validatedIncome.Amount;
+        existingIncome.Source = validatedIncome.Source;
+        existingIncome.Category = validatedIncome.Category;
+        existingIncome.IncomeDate = validatedIncome.IncomeDate;
+        existingIncome.Description = validatedIncome.Description;
 
         await _incomeRepository.UpdateIncomeAsync(existingIncome);
 

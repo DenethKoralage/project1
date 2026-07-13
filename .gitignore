@@ -1,7 +1,43 @@
-/frontend/node_modules
-/frontend/.next
+# .NET build output
+**/[Bb]in/
+**/[Oo]bj/
+TestResults/
+*.trx
+*.coverage
+*.coveragexml
 
-.vs
-.vs.*
+# Visual Studio, VS Code, and Rider
+.vs/
+.vscode/
+.idea/
 *.suo
+*.user
+*.userosscache
+*.sln.docstates
 
+# Node.js and Next.js
+frontend/node_modules/
+frontend/.next/
+frontend/out/
+frontend/.turbo/
+frontend/coverage/
+*.tsbuildinfo
+
+# Environment files and local secrets
+.env
+.env.*
+!.env.example
+appsettings.Local.json
+appsettings.*.Local.json
+
+# Logs and runtime files
+*.log
+logs/
+*.pid
+*.seed
+*.pid.lock
+
+# Operating-system files
+.DS_Store
+Thumbs.db
+Desktop.ini
