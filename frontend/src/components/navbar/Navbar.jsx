@@ -10,6 +10,7 @@ const links = [
   { id: 3, name: "Blog", href: "/blog" },
   { id: 4, name: "Contact", href: "/contacts" },
   { id: 5, name: "Portfolio", href: "/portfolio" },
+  { id: 6, name: "Profile", href: "/profile" }
 ];
 
 export default function Navbar() {
@@ -30,10 +31,10 @@ export default function Navbar() {
             <Link
               key={link.id}
               href={link.href}
-              className={`rounded-xl px-4 py-2 text-sm font-bold transition md:text-base text-emerald-600 ${
+              className={`rounded-xl px-4 py-2 text-sm font-bold transition md:text-base text-teal-300 ${
                 pathname === link.href
                   ? "bg-white/40 text-slate-900"
-                  : "text-emerald-700 hover:bg-white/30 hover:text-slate-700"
+                  : "text-teal-700 hover:bg-white/30 hover:text-teal-400"
               }`}
             >
               {link.name}
@@ -48,7 +49,7 @@ export default function Navbar() {
               <>
                 {/* Logged-in: show user name + logout */}
                 <Link
-                  href="/profileDashboard"
+                  href="/profile"
                   className="rounded-xl border border-emerald-700/20 bg-white/60 px-4 py-2 text-sm font-bold text-emerald-800 transition hover:bg-white"
                 >
                   👤 {user.name}
