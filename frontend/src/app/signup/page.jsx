@@ -2,17 +2,100 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { postAuth } from "@/lib/authApi";
 import { useAuth } from "@/context/AuthContext";
+import { getData as getCountries } from "country-list";
+import { data as currenciesData } from "currency-codes";
+import getCurrencySymbol from "currency-symbol-map";
 
-const initialForm = {
-  name: "",
-  email: "",
-  password: "",
-  designation: "",
-  avgIncome: "",
-};
+function SelectWithSearch({
+  label,
+  options,
+  value,
+  onChange,
+  placeholder,
+  searchPlaceholder = "Search...",
+  getOptionLabel,
+  getOptionValue,
+  className = "",
+  required = false,
+}) {
+  const [search, setSearch] = useState("");
+  const [isOpen, setIsOpen] = useState(false);
+
+  const filteredOptions = options.filter((opt) => {
+    const searchTerm = search.toLowerCase();
+    const label = getOptionLabel(opt).toLowerCase();
+    const value = getOptionValue(opt).toLowerCase();
+    return label.includes(searchTerm) || value.includes(searchTerm);
+  });
+
+  const handleOptionClick = (opt) => {
+    onChange(getOptionValue(opt));
+    setIsOpen(false);
+    setSearch("");
+  };
+
+  return (
+    <label className={`block space-y-2 ${className}`}>
+      <span className="text-sm font-semibold text-slate-800">{label}</span>
+      <div className="relative">
+        <div
+          className="w-full px-4 py-2 border border-slate-200 rounded-lg bg-white focus-within:ring-2 focus-within:ring-emerald-500 focus-within:border-transparent appearance-none"
+          onClick={() => setIsOpen(!isOpen)}
+        >
+          <div className="flex items-center justify-between">
+            <span className="text-slate-900">
+              {value
+                ? options.find((opt) => getOptionValue(opt) === value)
+                  ? getOptionLabel(options.find((opt) => getOptionValue(opt) === value))
+                  : value
+                : placeholder}
+            </span>
+            <svg
+              className={`w-5 h-5 text-slate-400 transition-transform ${isOpen ? "rotate-180" : ""}`}
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+            </svg>
+          </div>
+        </div>
+
+        {isOpen && (
+          <div className="absolute z-10 w-full mt-1 bg-white border border-slate-200 rounded-lg shadow-lg max-h-60 overflow-y-auto">
+            <input
+              type="text"
+              placeholder={searchPlaceholder}
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              onClick={(e) => e.stopPropagation()}
+              className="w-full px-4 py-2 border-b border-slate-100 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+              autoFocus
+            />
+            {filteredOptions.length === 0 ? (
+              <p className="px-4 py-2 text-sm text-slate-500">No results found</p>
+            ) : (
+              filteredOptions.map((opt, idx) => (
+                <button
+                  key={idx}
+                  type="button"
+                  onClick={() => handleOptionClick(opt)}
+                  className="w-full px-4 py-2 text-left hover:bg-emerald-50 text-slate-900"
+                >
+                  {getOptionLabel(opt)}
+                </button>
+              ))
+            )}
+          </div>
+        )}
+      </div>
+      <input type="hidden" name="country" value={value} />
+    </label>
+  );
+}
 
 export default function SignupPage() {
   const router = useRouter();
@@ -21,32 +104,59 @@ export default function SignupPage() {
   const [status, setStatus] = useState({ type: "", message: "" });
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  // Load countries and currencies from packages
+  const [countries, setCountries] = useState([]);
+  const [currencies, setCurrencies] = useState([]);
+
+  useEffect(() => {
+    // Load countries from country-list package
+    setCountries(getCountries());
+
+    // Load currencies from currency-codes package
+    const formattedCurrencies = currenciesData
+      .filter((currency) => currency.code && currency.currency)
+      .map((currency) => ({
+        code: currency.code,
+        name: currency.currency,
+        symbol: getCurrencySymbol(currency.code) || "",
+      }))
+      .sort((a, b) => a.name.localeCompare(b.name));
+    setCurrencies(formattedCurrencies);
+  }, []);
+
   async function handleSubmit(event) {
     event.preventDefault();
     setIsSubmitting(true);
     setStatus({ type: "", message: "" });
 
     try {
-      const data = await postAuth("/auth/register", {
-        name: form.name,
-        email: form.email,
-        password: form.password,
-        designation: form.designation,
-        avgIncome: Number(form.avgIncome),
-      });
+      const backendPayload = {
+        Name: form.name,
+        Email: form.email,
+        Password: form.password,
+        Designation: form.designation,
+        Workplace: form.workplace,
+        HomeAddress: form.homeAddress,
+        HomeCity: form.homeCity,
+        Country: form.country,
+        Currency: form.currency,
+        AVGIncome: Number(form.avgIncome),
+      };
+
+      const data = await postAuth("/api/auth/signup", backendPayload);
 
       // Auto-login: persist the session returned by the register endpoint.
       login(data);
 
       setStatus({
         type: "success",
-        message: "Account created! Redirecting to your dashboard...",
+        message: "Account created! Redirecting to your profile...",
       });
       setForm(initialForm);
 
       window.setTimeout(() => {
-        router.push("/profileDashboard");
-      }, 800);
+        router.push("/profile");
+      }, 1500);
     } catch (error) {
       setStatus({
         type: "error",
@@ -56,6 +166,18 @@ export default function SignupPage() {
     } finally {
       setIsSubmitting(false);
     }
+  }
+
+  const handleInputChange = (field) => (event) => {
+    setForm((prev) => ({ ...prev, [field]: event.target.value }));
+  };
+
+  if (!countries.length || !currencies.length) {
+    return (
+      <main className="mx-auto w-full max-w-3xl py-10">
+        <div className="h-40 animate-pulse rounded-3xl bg-stone-100 motion-reduce:animate-none" />
+      </main>
+    );
   }
 
   return (
@@ -81,11 +203,9 @@ export default function SignupPage() {
             <input
               type="text"
               value={form.name}
-              onChange={(event) =>
-                setForm((current) => ({ ...current, name: event.target.value }))
-              }
+              onChange={handleInputChange("name")}
               className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-slate-900 outline-none transition focus:border-sky-500"
-              placeholder="Jane Doe"
+              placeholder="John Doe"
               required
             />
           </label>
@@ -95,11 +215,9 @@ export default function SignupPage() {
             <input
               type="email"
               value={form.email}
-              onChange={(event) =>
-                setForm((current) => ({ ...current, email: event.target.value }))
-              }
+              onChange={handleInputChange("email")}
               className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-slate-900 outline-none transition focus:border-sky-500"
-              placeholder="jane@example.com"
+              placeholder="john@example.com"
               required
             />
           </label>
@@ -111,12 +229,7 @@ export default function SignupPage() {
             <input
               type="password"
               value={form.password}
-              onChange={(event) =>
-                setForm((current) => ({
-                  ...current,
-                  password: event.target.value,
-                }))
-              }
+              onChange={handleInputChange("password")}
               className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-slate-900 outline-none transition focus:border-sky-500"
               placeholder="At least 8 characters"
               minLength={8}
@@ -131,17 +244,78 @@ export default function SignupPage() {
             <input
               type="text"
               value={form.designation}
-              onChange={(event) =>
-                setForm((current) => ({
-                  ...current,
-                  designation: event.target.value,
-                }))
-              }
+              onChange={handleInputChange("designation")}
               className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-slate-900 outline-none transition focus:border-sky-500"
               placeholder="Software Engineer"
               required
             />
           </label>
+
+          <label className="block space-y-2">
+            <span className="text-sm font-semibold text-slate-800">
+              Workplace
+            </span>
+            <input
+              type="text"
+              value={form.workplace}
+              onChange={handleInputChange("workplace")}
+              className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-slate-900 outline-none transition focus:border-sky-500"
+              placeholder="Tech Corp"
+              required
+            />
+          </label>
+
+          <label className="block space-y-2">
+            <span className="text-sm font-semibold text-slate-800">
+              Home Address
+            </span>
+            <input
+              type="text"
+              value={form.homeAddress}
+              onChange={handleInputChange("homeAddress")}
+              className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-slate-900 outline-none transition focus:border-sky-500"
+              placeholder="123 Tech Street"
+              required
+            />
+          </label>
+
+          <label className="block space-y-2">
+            <span className="text-sm font-semibold text-slate-800">
+              Home City
+            </span>
+            <input
+              type="text"
+              value={form.homeCity}
+              onChange={handleInputChange("homeCity")}
+              className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-slate-900 outline-none transition focus:border-sky-500"
+              placeholder="San Francisco"
+              required
+            />
+          </label>
+
+          <SelectWithSearch
+            label="Country"
+            options={countries}
+            value={form.country}
+            onChange={(val) => setForm((prev) => ({ ...prev, country: val }))}
+            placeholder="Select your country"
+            searchPlaceholder="Search country..."
+            getOptionLabel={(opt) => opt.name}
+            getOptionValue={(opt) => opt.code}
+            required
+          />
+
+          <SelectWithSearch
+            label="Currency"
+            options={currencies}
+            value={form.currency}
+            onChange={(val) => setForm((prev) => ({ ...prev, currency: val }))}
+            placeholder="Select your currency"
+            searchPlaceholder="Search currency..."
+            getOptionLabel={(opt) => `${opt.symbol} ${opt.code} - ${opt.name}`}
+            getOptionValue={(opt) => opt.code}
+            required
+          />
 
           <label className="block space-y-2 md:col-span-2">
             <span className="text-sm font-semibold text-slate-800">
@@ -150,12 +324,7 @@ export default function SignupPage() {
             <input
               type="number"
               value={form.avgIncome}
-              onChange={(event) =>
-                setForm((current) => ({
-                  ...current,
-                  avgIncome: event.target.value,
-                }))
-              }
+              onChange={handleInputChange("avgIncome")}
               className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-slate-900 outline-none transition focus:border-sky-500"
               placeholder="85000"
               min="0"
@@ -197,3 +366,16 @@ export default function SignupPage() {
     </main>
   );
 }
+
+const initialForm = {
+  name: "",
+  email: "",
+  password: "",
+  designation: "",
+  workplace: "",
+  homeAddress: "",
+  homeCity: "",
+  country: "",
+  currency: "",
+  avgIncome: "",
+};

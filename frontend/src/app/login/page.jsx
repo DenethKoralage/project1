@@ -25,8 +25,8 @@ export default function LoginPage() {
 
     try {
       const data = await postAuth("/auth/login", {
-        email: form.email,
-        password: form.password,
+        Email: form.email,
+        Password: form.password,
       });
 
       // Persist the session so the whole app knows who is logged in.
@@ -34,13 +34,13 @@ export default function LoginPage() {
 
       setStatus({
         type: "success",
-        message: `Welcome back, ${data.user.name}! Redirecting...`,
+        message: `Welcome back, ${data.user.Name}! Redirecting...`,
       });
       setForm(initialForm);
 
-      // Redirect to the profile dashboard after a short delay.
+      // Redirect to the profile page after a short delay.
       window.setTimeout(() => {
-        router.push("/profileDashboard");
+        router.push("/profile");
       }, 800);
     } catch (error) {
       setStatus({

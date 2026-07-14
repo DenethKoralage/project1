@@ -1,0 +1,8 @@
+{
+  "dependencies": {
+    "country-list": "^2.4.1",
+    "currency-codes": "^2.2.0",
+    "currency-symbol-map": "^5.1.0",
+    "easy-currencies": "^1.8.3"
+  }
+}

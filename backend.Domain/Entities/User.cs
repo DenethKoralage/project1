@@ -7,6 +7,10 @@ public class User
     public string Email { get; set; } = string.Empty;
     public string Password { get; set; } = string.Empty;
     public string Designation { get; set; } = string.Empty;
+    public string Workplace { get; set; } = string.Empty;
+    public string HomeAddress { get; set; } = string.Empty;
+    public string HomeCity { get; set; } = string.Empty;
+    public string Country { get; set; } = string.Empty;
     public int AVGIncome { get; set; }
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
