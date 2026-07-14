@@ -4,10 +4,10 @@ public class Income
 {
     public Guid Id { get; set; }
     public decimal Amount { get; set; } = 0;
-    public string Category { get; set; } = string.Empty;
-    public string Source { get; set; } = string.Empty;
+    public string Category { get; set; } = "Salary";
+    public string Source { get; set; } = "Monthly income";
     public DateTime IncomeDate { get; set; }
-    public string Description { get; set; } = string.Empty;
+    public string Description { get; set; } = "Initial income recorded during registration.";
     public int UserId { get; set; }
     public User User { get; set; } = null!;
 

@@ -12,7 +12,6 @@ let users = [
     HomeAddress: "123 Tech Street",
     HomeCity: "San Francisco",
     Country: "United States",
-    AVGIncome: 7500,
     CreatedAt: "2023-01-15T08:30:00Z",
     UpdatedAt: "2026-07-13T09:15:00Z",
     Incomes: [],
@@ -31,6 +30,7 @@ let users = [
     }
   }
 ];
+let incomes = [];
 
 // Helper function to find user by email
 const findUserByEmail = (email) => {
@@ -44,15 +44,15 @@ const generateToken = () => {
 
 export async function POST(request) {
   try {
-    const { Name, Email, Password, Designation, Workplace, HomeAddress, HomeCity, Country, AVGIncome, Currency } = await request.json();
+    const { Name, Email, Password, Designation, Workplace, HomeAddress, HomeCity, Country, IncomeAmount, Currency } = await request.json();
     const path = new URL(request.url).pathname;
     
     if (path.includes("signup")) {
       // Handle signup - validate all required fields
       if (!Name || !Email || !Password || !Designation || !Workplace || 
-          !HomeAddress || !HomeCity || !Country || !AVGIncome || !Currency) {
+          !HomeAddress || !HomeCity || !Country || !IncomeAmount || Number(IncomeAmount) <= 0 || !Currency) {
         return NextResponse.json(
-          { error: "Please provide all required fields: Name, Email, Password, Designation, Workplace, HomeAddress, HomeCity, Country, AVGIncome, and Currency" },
+          { error: "Please provide all required signup fields." },
           { status: 400 }
         );
       }
@@ -77,7 +77,6 @@ export async function POST(request) {
         HomeAddress: HomeAddress,
         HomeCity: HomeCity,
         Country: Country,
-        AVGIncome: AVGIncome,
         CreatedAt: new Date().toISOString(),
         UpdatedAt: new Date().toISOString(),
         Incomes: [],
@@ -97,6 +96,18 @@ export async function POST(request) {
       };
 
       users.push(newUser);
+
+      incomes.push({
+        Id: crypto.randomUUID(),
+        Amount: Number(IncomeAmount),
+        Source: "Monthly income",
+        Category: "Salary",
+        IncomeDate: new Date().toISOString(),
+        Description: "Initial income recorded during registration.",
+        UserId: newUser.Id,
+      });
+
+      newUser.Incomes = incomes.filter((income) => income.UserId === newUser.Id);
 
       // Return user (without password) and token - matching UserDto structure exactly
       const { Password: _, ...userWithoutPassword } = newUser;

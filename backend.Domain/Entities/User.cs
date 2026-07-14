@@ -11,7 +11,7 @@ public class User
     public string HomeAddress { get; set; } = string.Empty;
     public string HomeCity { get; set; } = string.Empty;
     public string Country { get; set; } = string.Empty;
-    public int AVGIncome { get; set; }
+    public string Currency { get; set; } = string.Empty;
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
     public List<Expense> Expenses { get; set; } = new List<Expense>();

@@ -126,6 +126,18 @@ export default function SignupPage() {
 
   async function handleSubmit(event) {
     event.preventDefault();
+
+    if (
+      Object.values(form).some((value) => !String(value).trim()) ||
+      Number(form.avgIncome) <= 0
+    ) {
+      setStatus({
+        type: "error",
+        message: "Please complete every field and enter an income greater than zero.",
+      });
+      return;
+    }
+
     setIsSubmitting(true);
     setStatus({ type: "", message: "" });
 
@@ -140,7 +152,7 @@ export default function SignupPage() {
         HomeCity: form.homeCity,
         Country: form.country,
         Currency: form.currency,
-        AVGIncome: Number(form.avgIncome),
+        IncomeAmount: Number(form.avgIncome),
       };
 
       const data = await postAuth("/api/auth/signup", backendPayload);
@@ -319,7 +331,7 @@ export default function SignupPage() {
 
           <label className="block space-y-2 md:col-span-2">
             <span className="text-sm font-semibold text-slate-800">
-              Average Monthly Income
+              Monthly Income
             </span>
             <input
               type="number"
@@ -327,8 +339,8 @@ export default function SignupPage() {
               onChange={handleInputChange("avgIncome")}
               className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-slate-900 outline-none transition focus:border-sky-500"
               placeholder="85000"
-              min="0"
-              step="1"
+              min="0.01"
+              step="0.01"
               required
             />
           </label>

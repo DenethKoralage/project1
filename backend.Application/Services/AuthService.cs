@@ -31,7 +31,21 @@ public class AuthService : IAuthService
             Email = normalizedEmail,
             Password = PasswordHelper.HashPassword(userRegistrationDto.Password),
             Designation = userRegistrationDto.Designation.Trim(),
-            AVGIncome = userRegistrationDto.AVGIncome
+            Workplace = userRegistrationDto.Workplace.Trim(),
+            HomeAddress = userRegistrationDto.HomeAddress.Trim(),
+            HomeCity = userRegistrationDto.HomeCity.Trim(),
+            Country = userRegistrationDto.Country.Trim(),
+            Currency = userRegistrationDto.Currency.Trim().ToUpperInvariant(),
+            Incomes =
+            [
+                Income.Create(
+                    0,
+                    userRegistrationDto.IncomeAmount,
+                    "Monthly income",
+                    "Salary",
+                    DateTime.UtcNow,
+                    "Initial income recorded during registration.")
+            ]
         };
 
         var createdUser = await _userRepository.CreateUserAsync(user);
@@ -78,7 +92,20 @@ public class AuthService : IAuthService
             Name = user.Name,
             Email = user.Email,
             Designation = user.Designation,
-            AVGIncome = user.AVGIncome
+            Workplace = user.Workplace,
+            HomeAddress = user.HomeAddress,
+            HomeCity = user.HomeCity,
+            Country = user.Country,
+            Currency = user.Currency,
+            Incomes = user.Incomes.Select(income => new IncomeDto
+            {
+                Id = income.Id,
+                Amount = income.Amount,
+                Source = income.Source,
+                Category = income.Category,
+                IncomeDate = income.IncomeDate,
+                Description = income.Description
+            }).ToList()
         };
     }
 }

@@ -22,6 +22,26 @@ public class UserRegistrationDto
     [StringLength(120)]
     public string Designation { get; set; } = string.Empty;
 
-    [Range(0, int.MaxValue)]
-    public int AVGIncome { get; set; }
+    [Required]
+    [StringLength(120)]
+    public string Workplace { get; set; } = string.Empty;
+
+    [Required]
+    [StringLength(256)]
+    public string HomeAddress { get; set; } = string.Empty;
+
+    [Required]
+    [StringLength(120)]
+    public string HomeCity { get; set; } = string.Empty;
+
+    [Required]
+    [StringLength(120)]
+    public string Country { get; set; } = string.Empty;
+
+    [Required]
+    [StringLength(10)]
+    public string Currency { get; set; } = string.Empty;
+
+    [Range(typeof(decimal), "0.01", "79228162514264337593543950335")]
+    public decimal IncomeAmount { get; set; }
 }

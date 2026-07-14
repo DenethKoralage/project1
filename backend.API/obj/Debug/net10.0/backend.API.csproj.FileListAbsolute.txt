@@ -159,6 +159,7 @@ C:\Users\DenethRandunu\prac project\nextJs\project1\backend.API\obj\Debug\net10.
 C:\Users\DenethRandunu\prac project\nextJs\project1\backend.API\obj\Debug\net10.0\staticwebassets.development.json
 C:\Users\DenethRandunu\prac project\nextJs\project1\backend.API\obj\Debug\net10.0\staticwebassets.build.endpoints.json
 C:\Users\DenethRandunu\prac project\nextJs\project1\backend.API\obj\Debug\net10.0\swae.build.ex.cache
+C:\Users\DenethRandunu\prac project\nextJs\project1\backend.API\obj\Debug\net10.0\staticwebassets.upToDateCheck.txt
 C:\Users\DenethRandunu\prac project\nextJs\project1\backend.API\obj\Debug\net10.0\backend..449C31B2.Up2Date
 C:\Users\DenethRandunu\prac project\nextJs\project1\backend.API\obj\Debug\net10.0\backend.API.dll
 C:\Users\DenethRandunu\prac project\nextJs\project1\backend.API\obj\Debug\net10.0\refint\backend.API.dll

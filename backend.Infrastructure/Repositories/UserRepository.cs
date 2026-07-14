@@ -73,47 +73,48 @@ public class UserRepository : IUserRepository
     public async Task<IEnumerable<User>> GetUsersWithIncomeAboveAsync(decimal incomeThreshold)
     {
         return await GetUsersWithDetails()
-            .Where(user => user.AVGIncome > incomeThreshold)
+            .Where(user => user.Incomes.Sum(income => income.Amount) > incomeThreshold)
             .ToListAsync();
     }
 
     public async Task<IEnumerable<User>> GetUsersWithIncomeBelowAsync(decimal incomeThreshold)
     {
         return await GetUsersWithDetails()
-            .Where(user => user.AVGIncome < incomeThreshold)
+            .Where(user => user.Incomes.Sum(income => income.Amount) < incomeThreshold)
             .ToListAsync();
     }
 
     public async Task<IEnumerable<User>> GetUsersWithIncomeBetweenAsync(decimal minIncome, decimal maxIncome)
     {
         return await GetUsersWithDetails()
-            .Where(user => user.AVGIncome >= minIncome && user.AVGIncome <= maxIncome)
+            .Where(user => user.Incomes.Sum(income => income.Amount) >= minIncome &&
+                           user.Incomes.Sum(income => income.Amount) <= maxIncome)
             .ToListAsync();
     }
 
     public async Task<IEnumerable<User>> GetUsersWithIncomeAboveAverageAsync()
     {
-        if (!await _context.Users.AnyAsync())
+        if (!await _context.Incomes.AnyAsync())
         {
             return [];
         }
 
-        var averageIncome = await _context.Users.AverageAsync(user => user.AVGIncome);
+        var averageIncome = await _context.Incomes.AverageAsync(income => income.Amount);
         return await GetUsersWithDetails()
-            .Where(user => user.AVGIncome > averageIncome)
+            .Where(user => user.Incomes.Sum(income => income.Amount) > averageIncome)
             .ToListAsync();
     }
 
     public async Task<IEnumerable<User>> GetUsersWithIncomeBelowAverageAsync()
     {
-        if (!await _context.Users.AnyAsync())
+        if (!await _context.Incomes.AnyAsync())
         {
             return [];
         }
 
-        var averageIncome = await _context.Users.AverageAsync(user => user.AVGIncome);
+        var averageIncome = await _context.Incomes.AverageAsync(income => income.Amount);
         return await GetUsersWithDetails()
-            .Where(user => user.AVGIncome < averageIncome)
+            .Where(user => user.Incomes.Sum(income => income.Amount) < averageIncome)
             .ToListAsync();
     }
 

@@ -10,7 +10,7 @@ public class UserDto
     public string HomeAddress { get; set; } = string.Empty;
     public string HomeCity { get; set; } = string.Empty;
     public string Country { get; set; } = string.Empty;
-    public int AVGIncome { get; set; }
+    public string Currency { get; set; } = string.Empty;
     public DateTime CreatedAt { get; set; }
     public DateTime UpdatedAt { get; set; }
     public List<IncomeDto> Incomes { get; internal set; } = new List<IncomeDto>();

@@ -41,12 +41,25 @@ public class UserService : IUserService
             Email = normalizedEmail,
             Password = PasswordHelper.HashPassword(userRegistrationDto.Password),
             Designation = userRegistrationDto.Designation.Trim(),
-            AVGIncome = userRegistrationDto.AVGIncome,
+            Workplace = userRegistrationDto.Workplace.Trim(),
+            HomeAddress = userRegistrationDto.HomeAddress.Trim(),
+            HomeCity = userRegistrationDto.HomeCity.Trim(),
+            Country = userRegistrationDto.Country.Trim(),
+            Currency = userRegistrationDto.Currency.Trim().ToUpperInvariant(),
             CreatedAt = DateTime.UtcNow,
             UpdatedAt = DateTime.UtcNow,
             Expenses = new List<Expense>(),
             Budgets = new List<Budget>(),
-            Incomes = new List<Income>()
+            Incomes =
+            [
+                Income.Create(
+                    0,
+                    userRegistrationDto.IncomeAmount,
+                    "Monthly income",
+                    "Salary",
+                    DateTime.UtcNow,
+                    "Initial income recorded during registration.")
+            ]
         };
 
         var createdUser = await _userRepository.CreateUserAsync(user);
@@ -75,7 +88,11 @@ public class UserService : IUserService
             user.Password = PasswordHelper.HashPassword(userRegistrationDto.Password);
         }
         user.Designation = userRegistrationDto.Designation.Trim();
-        user.AVGIncome = userRegistrationDto.AVGIncome;
+        user.Workplace = userRegistrationDto.Workplace.Trim();
+        user.HomeAddress = userRegistrationDto.HomeAddress.Trim();
+        user.HomeCity = userRegistrationDto.HomeCity.Trim();
+        user.Country = userRegistrationDto.Country.Trim();
+        user.Currency = userRegistrationDto.Currency.Trim().ToUpperInvariant();
         user.UpdatedAt = DateTime.UtcNow;
 
         await _userRepository.UpdateUserAsync(user);
@@ -153,7 +170,11 @@ public class UserService : IUserService
             Name = user.Name,
             Email = user.Email,
             Designation = user.Designation,
-            AVGIncome = user.AVGIncome,
+            Workplace = user.Workplace,
+            HomeAddress = user.HomeAddress,
+            HomeCity = user.HomeCity,
+            Country = user.Country,
+            Currency = user.Currency,
             CreatedAt = user.CreatedAt,
             UpdatedAt = user.UpdatedAt,
             Incomes = user.Incomes.Select(i => new IncomeDto
@@ -161,6 +182,7 @@ public class UserService : IUserService
                 Id = i.Id,
                 Amount = i.Amount,
                 Source = i.Source,
+                Category = i.Category,
                 IncomeDate = i.IncomeDate,
                 Description = i.Description,
             }).ToList(),
