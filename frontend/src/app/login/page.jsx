@@ -24,7 +24,7 @@ export default function LoginPage() {
     setStatus({ type: "", message: "" });
 
     try {
-      const data = await postAuth("/api/auth/login", {
+      const data = await postAuth("/auth/login", {
         Email: form.email,
         Password: form.password,
       });
@@ -40,7 +40,7 @@ export default function LoginPage() {
 
       // Redirect to the profile page after a short delay.
       window.setTimeout(() => {
-        router.push("/profile");
+        router.push("/");
       }, 800);
     } catch (error) {
       setStatus({

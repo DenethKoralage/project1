@@ -155,19 +155,20 @@ export default function SignupPage() {
         IncomeAmount: Number(form.avgIncome),
       };
 
-      const data = await postAuth("/api/auth/signup", backendPayload);
+      const data = await postAuth("/auth/register", backendPayload);
 
       // Auto-login: persist the session returned by the register endpoint.
       login(data);
 
       setStatus({
         type: "success",
-        message: "Account created! Redirecting to your profile...",
+        message: "Account created! Redirecting to home...",
       });
       setForm(initialForm);
+      console.log("Account created!");
 
       window.setTimeout(() => {
-        router.push("/profile");
+        router.push("/");
       }, 1500);
     } catch (error) {
       setStatus({

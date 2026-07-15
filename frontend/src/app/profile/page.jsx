@@ -1,9 +1,13 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "@/context/AuthContext";
+import { getWithAuth, putWithAuth } from "@/lib/authApi";
+import { getData as getCountries } from "country-list";
+import { data as currenciesData } from "currency-codes";
+import getCurrencySymbol from "currency-symbol-map";
 
 /**
  * Tolerant field reader: the backend UserDto uses PascalCase
@@ -12,6 +16,95 @@ import { useAuth } from "@/context/AuthContext";
  */
 const pick = (u, pascal, camel) =>
   u?.[pascal] ?? u?.[camel] ?? "";
+
+const getUserId = (user) => user?.Id ?? user?.id;
+
+const decodeJwtPayload = (token) => {
+  try {
+    const payload = token?.split(".")?.[1];
+    if (!payload) return null;
+
+    const base64 = payload.replace(/-/g, "+").replace(/_/g, "/");
+    const json = atob(base64.padEnd(Math.ceil(base64.length / 4) * 4, "="));
+    return JSON.parse(json);
+  } catch {
+    return null;
+  }
+};
+
+const getTokenUserId = (token) => {
+  const payload = decodeJwtPayload(token);
+  return (
+    payload?.sub ??
+    payload?.nameid ??
+    payload?.[
+      "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier"
+    ]
+  );
+};
+
+const countryOptions = getCountries().sort((a, b) => a.name.localeCompare(b.name));
+
+const currencyOptions = currenciesData
+  .filter((currency) => currency.code && currency.currency)
+  .map((currency) => ({
+    code: currency.code,
+    name: currency.currency,
+    symbol: getCurrencySymbol(currency.code) || currency.code,
+  }))
+  .sort((a, b) => a.name.localeCompare(b.name));
+
+const findCountry = (value) => {
+  if (!value) return null;
+  return countryOptions.find(
+    (country) => country.code === value || country.name === value
+  );
+};
+
+const findCurrency = (value) => {
+  if (!value) return null;
+  return currencyOptions.find((currency) => currency.code === value);
+};
+
+const getCountryValue = (user) => {
+  const country = pick(user, "Country", "country");
+  return findCountry(country)?.code ?? country;
+};
+
+const getCountryLabel = (value) => findCountry(value)?.name ?? value;
+
+const getCurrencyLabel = (value) => {
+  const currency = findCurrency(value);
+  return currency
+    ? `${currency.symbol} ${currency.code} - ${currency.name}`
+    : value;
+};
+
+const getMonthlyIncome = (user) => {
+  const directIncome = pick(user, "IncomeAmount", "incomeAmount") ||
+    pick(user, "AVGIncome", "avgIncome");
+
+  if (directIncome) {
+    return directIncome;
+  }
+
+  const incomes = user?.Incomes ?? user?.incomes ?? [];
+  return incomes.reduce((total, income) => {
+    return total + Number(income?.Amount ?? income?.amount ?? 0);
+  }, 0);
+};
+
+const buildEditForm = (user) => ({
+  Name: pick(user, "Name", "name"),
+  Email: pick(user, "Email", "email"),
+  Designation: pick(user, "Designation", "designation"),
+  Workplace: pick(user, "Workplace", "workplace"),
+  HomeAddress: pick(user, "HomeAddress", "homeAddress"),
+  HomeCity: pick(user, "HomeCity", "homeCity"),
+  Country: getCountryValue(user),
+  Currency: user?.Currency ?? user?.currency ?? "",
+  IncomeAmount: getMonthlyIncome(user),
+});
 
 function LedgerRow({ label, value, accent = false }) {
   return (
@@ -33,9 +126,10 @@ function LedgerRow({ label, value, accent = false }) {
 
 export default function ProfilePage() {
   const router = useRouter();
-  const { user: authUser, logout, loading } = useAuth();
+  const { user: authUser, token, logout, loading } = useAuth();
   const [profile, setProfile] = useState(null);
   const [profileLoading, setProfileLoading] = useState(true);
+  const [profileError, setProfileError] = useState("");
   const [editMode, setEditMode] = useState(false);
   const [editForm, setEditForm] = useState({
     Name: "",
@@ -46,9 +140,7 @@ export default function ProfilePage() {
     HomeCity: "",
     Country: "",
     Currency: "",
-    AVGIncome: "",
-    bio: "",
-    socialLinks: { github: "", linkedin: "", twitter: "", portfolio: "" },
+    IncomeAmount: "",
   });
   const [updateStatus, setUpdateStatus] = useState({ type: "", message: "" });
 
@@ -59,65 +151,35 @@ export default function ProfilePage() {
     }
   }, [loading, authUser, router]);
 
-  // Fetch the latest profile from the API (/api/user mock in dev).
-  useEffect(() => {
-    if (!loading && authUser) {
-      fetchProfile();
-    }
-  }, [loading, authUser]);
-
-  const fetchProfile = async () => {
+  const fetchProfile = useCallback(async () => {
     try {
       setProfileLoading(true);
-      const response = await fetch("/api/user", { method: "GET" });
-      if (!response.ok) throw new Error("Failed to fetch profile");
-      const data = await response.json();
-      const u = data?.user ?? authUser;
+      const userId = getTokenUserId(token) ?? getUserId(authUser);
+      if (!userId) throw new Error("Missing logged-in user id");
+
+      const u = await getWithAuth(`/api/user/${userId}`, token);
       setProfile(u);
-      setEditForm({
-        Name: pick(u, "Name", "name"),
-        Email: pick(u, "Email", "email"),
-        Designation: pick(u, "Designation", "designation"),
-        Workplace: pick(u, "Workplace", "workplace"),
-        HomeAddress: pick(u, "HomeAddress", "homeAddress"),
-        HomeCity: pick(u, "HomeCity", "homeCity"),
-        Country: pick(u, "Country", "country"),
-        Currency: u?.Currency ?? u?.currency ?? "",
-        AVGIncome: pick(u, "AVGIncome", "avgIncome"),
-        bio: u?.bio ?? "",
-        socialLinks: {
-          github: u?.socialLinks?.github ?? "",
-          linkedin: u?.socialLinks?.linkedin ?? "",
-          twitter: u?.socialLinks?.twitter ?? "",
-          portfolio: u?.socialLinks?.portfolio ?? "",
-        },
-      });
+      setEditForm(buildEditForm(u));
+      setProfileError("");
     } catch (error) {
       console.error("Error fetching profile:", error);
-      const u = authUser;
-      setProfile(u);
-      setEditForm({
-        Name: pick(u, "Name", "name"),
-        Email: pick(u, "Email", "email"),
-        Designation: pick(u, "Designation", "designation"),
-        Workplace: pick(u, "Workplace", "workplace"),
-        HomeAddress: pick(u, "HomeAddress", "homeAddress"),
-        HomeCity: pick(u, "HomeCity", "homeCity"),
-        Country: pick(u, "Country", "country"),
-        Currency: u?.Currency ?? u?.currency ?? "",
-        AVGIncome: pick(u, "AVGIncome", "avgIncome"),
-        bio: u?.bio ?? "",
-        socialLinks: {
-          github: u?.socialLinks?.github ?? "",
-          linkedin: u?.socialLinks?.linkedin ?? "",
-          twitter: u?.socialLinks?.twitter ?? "",
-          portfolio: u?.socialLinks?.portfolio ?? "",
-        },
-      });
+      setProfile(null);
+      setProfileError("Could not load your profile from the backend. Please log in again.");
     } finally {
       setProfileLoading(false);
     }
-  };
+  }, [authUser, token]);
+
+  // Fetch the latest profile from the .NET backend.
+  useEffect(() => {
+    if (!loading && authUser && token) {
+      const loadProfile = async () => {
+        await fetchProfile();
+      };
+
+      loadProfile();
+    }
+  }, [loading, authUser, token, fetchProfile]);
 
   const handleLogout = () => {
     logout();
@@ -126,48 +188,34 @@ export default function ProfilePage() {
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    if (name.startsWith("socialLinks.")) {
-      const [, key] = name.split(".");
-      setEditForm((prev) => ({
-        ...prev,
-        socialLinks: { ...prev.socialLinks, [key]: value },
-      }));
-    } else {
-      setEditForm((prev) => ({ ...prev, [name]: value }));
-    }
+    setEditForm((prev) => ({ ...prev, [name]: value }));
   };
 
   const handleUpdateProfile = async (e) => {
     e.preventDefault();
     setUpdateStatus({ type: "pending", message: "Updating profile..." });
     try {
-      const response = await fetch("/api/user", {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          Name: editForm.Name,
-          Email: editForm.Email,
-          Designation: editForm.Designation,
-          Workplace: editForm.Workplace,
-          HomeAddress: editForm.HomeAddress,
-          HomeCity: editForm.HomeCity,
-          Country: editForm.Country,
-          Currency: editForm.Currency,
-          AVGIncome: Number(editForm.AVGIncome),
-          bio: editForm.bio,
-          socialLinks: editForm.socialLinks,
-        }),
-      });
-      if (!response.ok) throw new Error("Failed to update profile");
-      const data = await response.json();
-      if (data.success) {
-        setProfile(data.user);
-        setEditMode(false);
-        setUpdateStatus({ type: "success", message: "Profile updated successfully!" });
-        setTimeout(() => setUpdateStatus({ type: "", message: "" }), 3000);
-      } else {
-        throw new Error(data.message || "Failed to update profile");
-      }
+      const userId = getTokenUserId(token) ?? getUserId(displayUser);
+      if (!userId) throw new Error("Missing logged-in user id");
+
+      const payload = {
+        Name: editForm.Name,
+        Email: editForm.Email,
+        Designation: editForm.Designation,
+        Workplace: editForm.Workplace,
+        HomeAddress: editForm.HomeAddress,
+        HomeCity: editForm.HomeCity,
+        Country: editForm.Country,
+        Currency: editForm.Currency,
+      };
+
+      await putWithAuth(`/api/user/${userId}`, payload, token);
+      const updatedProfile = await getWithAuth(`/api/user/${userId}`, token);
+      setProfile(updatedProfile);
+      setEditForm(buildEditForm(updatedProfile));
+      setEditMode(false);
+      setUpdateStatus({ type: "success", message: "Profile updated successfully!" });
+      setTimeout(() => setUpdateStatus({ type: "", message: "" }), 3000);
     } catch (error) {
       console.error("Error updating profile:", error);
       setUpdateStatus({
@@ -186,16 +234,39 @@ export default function ProfilePage() {
     );
   }
 
-  const displayUser = profile || authUser;
-  if (!displayUser) return <div>Loading...</div>;
+  if (profileError) {
+    return (
+      <main className="mx-auto w-full max-w-3xl py-10">
+        <section className="rounded-3xl border border-rose-200 bg-rose-50 px-8 py-6 text-rose-800">
+          <p className="font-semibold">Profile unavailable</p>
+          <p className="mt-2 text-sm">{profileError}</p>
+          <button
+            onClick={handleLogout}
+            className="mt-4 rounded-xl bg-rose-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-rose-700"
+          >
+            Log in again
+          </button>
+        </section>
+      </main>
+    );
+  }
+
+  if (profileLoading || !profile) {
+    return (
+      <main className="mx-auto w-full max-w-3xl space-y-6 py-10">
+        <div className="h-40 animate-pulse rounded-3xl bg-stone-100 motion-reduce:animate-none" />
+        <div className="h-56 animate-pulse rounded-3xl bg-stone-100 motion-reduce:animate-none" />
+      </main>
+    );
+  }
+
+  const displayUser = profile;
 
   const name = pick(displayUser, "Name", "name") || "User";
   const designation = pick(displayUser, "Designation", "designation");
   const currency = displayUser?.Currency || displayUser?.currency || "USD";
   const avgIncome =
-    pick(displayUser, "AVGIncome", "avgIncome") ||
-    pick(displayUser, "avgIncome", "avgIncome") ||
-    0;
+    getMonthlyIncome(displayUser) || 0;
 
   const formattedIncome = new Intl.NumberFormat("en-US", {
     style: "currency",
@@ -210,6 +281,7 @@ export default function ProfilePage() {
     .join("")
     .toUpperCase();
 
+  /*
   const countries = [
     "United States", "Canada", "United Kingdom", "Germany", "France",
     "Australia", "India", "Brazil", "Japan", "China", "Sweden",
@@ -228,6 +300,7 @@ export default function ProfilePage() {
     { code: "SEK", symbol: "kr", name: "Swedish Krona" },
     { code: "NOK", symbol: "kr", name: "Norwegian Krone" },
   ];
+  */
 
   return (
     <main className="mx-auto w-full max-w-3xl space-y-6 py-10">
@@ -301,7 +374,7 @@ export default function ProfilePage() {
                   value={editForm.Name}
                   onChange={handleInputChange}
                   required
-                  className="w-full px-4 py-2 border border-stone-200 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+                  className="w-full px-4 py-2 border text-stone-400 border-stone-200 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
                 />
               </div>
               <div>
@@ -312,7 +385,7 @@ export default function ProfilePage() {
                   value={editForm.Email}
                   onChange={handleInputChange}
                   required
-                  className="w-full px-4 py-2 border border-stone-200 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+                  className="w-full px-4 py-2 border text-stone-400 border-stone-200 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
                 />
               </div>
               <div>
@@ -322,7 +395,7 @@ export default function ProfilePage() {
                   name="Designation"
                   value={editForm.Designation}
                   onChange={handleInputChange}
-                  className="w-full px-4 py-2 border border-stone-200 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+                  className="w-full px-4 py-2 border text-stone-400 border-stone-200 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
                 />
               </div>
               <div>
@@ -332,7 +405,7 @@ export default function ProfilePage() {
                   name="Workplace"
                   value={editForm.Workplace}
                   onChange={handleInputChange}
-                  className="w-full px-4 py-2 border border-stone-200 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+                  className="w-full px-4 py-2 border text-stone-400 border-stone-200 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
                 />
               </div>
               <div>
@@ -342,7 +415,7 @@ export default function ProfilePage() {
                   name="HomeAddress"
                   value={editForm.HomeAddress}
                   onChange={handleInputChange}
-                  className="w-full px-4 py-2 border border-stone-200 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+                  className="w-full px-4 py-2 border text-stone-400 border-stone-200 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
                 />
               </div>
               <div>
@@ -352,7 +425,7 @@ export default function ProfilePage() {
                   name="HomeCity"
                   value={editForm.HomeCity}
                   onChange={handleInputChange}
-                  className="w-full px-4 py-2 border border-stone-200 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+                  className="w-full px-4 py-2 border text-stone-400 border-stone-200 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
                 />
               </div>
               <div>
@@ -361,11 +434,13 @@ export default function ProfilePage() {
                   name="Country"
                   value={editForm.Country}
                   onChange={handleInputChange}
-                  className="w-full px-4 py-2 border border-stone-200 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent bg-white"
+                  className="w-full px-4 py-2 border text-stone-400 border-stone-200 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent bg-white"
                 >
                   <option value="" disabled>Select your country</option>
-                  {countries.map((c) => (
-                    <option key={c} value={c}>{c}</option>
+                  {countryOptions.map((country) => (
+                    <option key={country.code} value={country.code}>
+                      {country.name}
+                    </option>
                   ))}
                 </select>
               </div>
@@ -375,12 +450,12 @@ export default function ProfilePage() {
                   name="Currency"
                   value={editForm.Currency}
                   onChange={handleInputChange}
-                  className="w-full px-4 py-2 border border-stone-200 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent bg-white"
+                  className="w-full px-4 py-2 border text-stone-400 border-stone-200 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent bg-white"
                 >
                   <option value="" disabled>Select your currency</option>
-                  {currencies.map((c) => (
-                    <option key={c.code} value={c.code}>
-                      {c.symbol} {c.code} - {c.name}
+                  {currencyOptions.map((currency) => (
+                    <option key={currency.code} value={currency.code}>
+                      {currency.symbol} {currency.code} - {currency.name}
                     </option>
                   ))}
                 </select>
@@ -389,24 +464,13 @@ export default function ProfilePage() {
                 <label className="block text-sm font-medium text-stone-700 mb-2">Average Monthly Income</label>
                 <input
                   type="number"
-                  name="AVGIncome"
-                  value={editForm.AVGIncome}
-                  onChange={handleInputChange}
+                  name="IncomeAmount"
+                  value={editForm.IncomeAmount}
+                  disabled
                   min="0"
-                  className="w-full px-4 py-2 border border-stone-200 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+                  className="w-full px-4 py-2 border border-stone-200 rounded-lg bg-stone-100 text-stone-500"
                 />
               </div>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-stone-700 mb-2">Bio</label>
-              <textarea
-                name="bio"
-                value={editForm.bio}
-                onChange={handleInputChange}
-                rows="4"
-                className="w-full px-4 py-2 border border-stone-200 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
-              />
             </div>
 
             <div className="flex justify-end space-x-3">
@@ -443,8 +507,8 @@ export default function ProfilePage() {
               <LedgerRow label="Workplace" value={pick(displayUser, "Workplace", "workplace")} />
               <LedgerRow label="Home address" value={pick(displayUser, "HomeAddress", "homeAddress")} />
               <LedgerRow label="Home city" value={pick(displayUser, "HomeCity", "homeCity")} />
-              <LedgerRow label="Country" value={pick(displayUser, "Country", "country")} />
-              <LedgerRow label="Currency" value={currency} />
+              <LedgerRow label="Country" value={getCountryLabel(pick(displayUser, "Country", "country"))} />
+              <LedgerRow label="Currency" value={getCurrencyLabel(currency)} />
               <LedgerRow label="Avg. monthly income" value={formattedIncome} accent />
               {pick(displayUser, "CreatedAt", "createdAt") && (
                 <LedgerRow

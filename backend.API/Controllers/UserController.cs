@@ -72,7 +72,7 @@ public class UserController : ControllerBase
     }
 
     [HttpPut("{id:int}")]
-    public async Task<IActionResult> UpdateUser(int id, UserDto userDto)
+    public async Task<IActionResult> UpdateUser(int id, UpdateUserDto userDto)
     {
         try
         {

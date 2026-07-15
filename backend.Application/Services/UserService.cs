@@ -71,7 +71,7 @@ public class UserService : IUserService
         return MapToDto(createdUser);
     }
 
-    public async Task<bool> UpdateUserAsync(int id, UserDto userDto)
+    public async Task<bool> UpdateUserAsync(int id, UpdateUserDto userDto)
     {
         var user = await _userRepository.GetUserByIdAsync(id);
         if (user == null)
@@ -88,10 +88,6 @@ public class UserService : IUserService
 
         user.Name = userDto.Name.Trim();
         user.Email = normalizedEmail;
-        if (!string.IsNullOrWhiteSpace(userDto.Password))
-        {
-            user.Password = PasswordHelper.HashPassword(userDto.Password);
-        }
         user.Designation = userDto.Designation.Trim();
         user.Workplace = userDto.Workplace.Trim();
         user.HomeAddress = userDto.HomeAddress.Trim();

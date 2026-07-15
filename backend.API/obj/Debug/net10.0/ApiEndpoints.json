@@ -973,7 +973,7 @@
       },
       {
         "Name": "userDto",
-        "Type": "backend.Application.DTOs.UserDto",
+        "Type": "backend.Application.DTOs.UpdateUserDto",
         "IsRequired": true
       }
     ],
