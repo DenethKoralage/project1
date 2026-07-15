@@ -915,8 +915,8 @@
     "Order": 0,
     "Parameters": [
       {
-        "Name": "userRegistrationDto",
-        "Type": "backend.Application.DTOs.UserRegistrationDto",
+        "Name": "userDto",
+        "Type": "backend.Application.DTOs.UserDto",
         "IsRequired": true
       }
     ],
@@ -972,8 +972,8 @@
         "IsRequired": true
       },
       {
-        "Name": "userRegistrationDto",
-        "Type": "backend.Application.DTOs.UserRegistrationDto",
+        "Name": "userDto",
+        "Type": "backend.Application.DTOs.UserDto",
         "IsRequired": true
       }
     ],
@@ -1189,8 +1189,8 @@
     "Order": 0,
     "Parameters": [
       {
-        "Name": "userRegistrationDto",
-        "Type": "backend.Application.DTOs.UserRegistrationDto",
+        "Name": "userDto",
+        "Type": "backend.Application.DTOs.UserDto",
         "IsRequired": true
       }
     ],
