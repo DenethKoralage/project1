@@ -14,9 +14,9 @@ public class AuthController : ControllerBase
     }
 
     [HttpPost("register")]
-    public async Task<IActionResult> Register(UserRegistrationDto userRegistrationDto)
+    public async Task<IActionResult> Register(UserDto userDto)
     {
-        var result = await _authService.RegisterAsync(userRegistrationDto);
+        var result = await _authService.RegisterAsync(userDto);
         if (result.User == null)
         {
             return BadRequest(new { message = result.Message });

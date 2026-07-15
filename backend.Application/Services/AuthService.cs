@@ -16,9 +16,14 @@ public class AuthService : IAuthService
         _jwtTokenService = jwtTokenService;
     }
 
-    public async Task<AuthResponseDto> RegisterAsync(UserRegistrationDto userRegistrationDto)
+    public async Task<AuthResponseDto> RegisterAsync(UserDto userDto)
     {
-        var normalizedEmail = NormalizeEmail(userRegistrationDto.Email);
+        if (string.IsNullOrWhiteSpace(userDto.Password) || userDto.IncomeAmount is null or <= 0)
+        {
+            return new AuthResponseDto { Message = "Password and income amount are required." };
+        }
+
+        var normalizedEmail = NormalizeEmail(userDto.Email);
 
         if (await _userRepository.EmailExistsAsync(normalizedEmail))
         {
@@ -27,20 +32,20 @@ public class AuthService : IAuthService
 
         var user = new User
         {
-            Name = userRegistrationDto.Name.Trim(),
+            Name = userDto.Name.Trim(),
             Email = normalizedEmail,
-            Password = PasswordHelper.HashPassword(userRegistrationDto.Password),
-            Designation = userRegistrationDto.Designation.Trim(),
-            Workplace = userRegistrationDto.Workplace.Trim(),
-            HomeAddress = userRegistrationDto.HomeAddress.Trim(),
-            HomeCity = userRegistrationDto.HomeCity.Trim(),
-            Country = userRegistrationDto.Country.Trim(),
-            Currency = userRegistrationDto.Currency.Trim().ToUpperInvariant(),
+            Password = PasswordHelper.HashPassword(userDto.Password),
+            Designation = userDto.Designation.Trim(),
+            Workplace = userDto.Workplace.Trim(),
+            HomeAddress = userDto.HomeAddress.Trim(),
+            HomeCity = userDto.HomeCity.Trim(),
+            Country = userDto.Country.Trim(),
+            Currency = userDto.Currency.Trim().ToUpperInvariant(),
             Incomes =
             [
                 Income.Create(
                     0,
-                    userRegistrationDto.IncomeAmount,
+                    userDto.IncomeAmount.Value,
                     "Monthly income",
                     "Salary",
                     DateTime.UtcNow,
@@ -97,6 +102,8 @@ public class AuthService : IAuthService
             HomeCity = user.HomeCity,
             Country = user.Country,
             Currency = user.Currency,
+            CreatedAt = user.CreatedAt,
+            UpdatedAt = user.UpdatedAt,
             Incomes = user.Incomes.Select(income => new IncomeDto
             {
                 Id = income.Id,

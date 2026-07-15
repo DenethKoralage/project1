@@ -54,6 +54,8 @@ public class AppDbContext : DbContext
         modelBuilder.Entity<Expense>(entity =>
         {
             entity.Property(expense => expense.Amount).HasPrecision(18, 2);
+            entity.Property(expense => expense.Category).HasMaxLength(120);
+            entity.Property(expense => expense.Description).HasMaxLength(512);
 
             entity.HasOne(expense => expense.User)
                 .WithMany(user => user.Expenses)

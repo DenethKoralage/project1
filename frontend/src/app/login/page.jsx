@@ -24,7 +24,7 @@ export default function LoginPage() {
     setStatus({ type: "", message: "" });
 
     try {
-      const data = await postAuth("/auth/login", {
+      const data = await postAuth("/api/auth/login", {
         Email: form.email,
         Password: form.password,
       });

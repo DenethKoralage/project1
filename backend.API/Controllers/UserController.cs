@@ -50,16 +50,20 @@ public class UserController : ControllerBase
 
     [HttpPost]
     [AllowAnonymous]
-    public async Task<ActionResult<UserDto>> CreateUser(UserRegistrationDto userRegistrationDto)
+    public async Task<ActionResult<UserDto>> CreateUser(UserDto userDto)
     {
         try
         {
-            var createdUser = await _userService.CreateUserAsync(userRegistrationDto);
+            var createdUser = await _userService.CreateUserAsync(userDto);
             return CreatedAtAction(nameof(GetUser), new { id = createdUser.Id }, createdUser);
         }
         catch (InvalidOperationException ex)
         {
             return Conflict(new { message = ex.Message });
+        }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(new { message = ex.Message });
         }
         catch (Exception)
         {
@@ -68,11 +72,11 @@ public class UserController : ControllerBase
     }
 
     [HttpPut("{id:int}")]
-    public async Task<IActionResult> UpdateUser(int id, UserRegistrationDto userRegistrationDto)
+    public async Task<IActionResult> UpdateUser(int id, UserDto userDto)
     {
         try
         {
-            var updated = await _userService.UpdateUserAsync(id, userRegistrationDto);
+            var updated = await _userService.UpdateUserAsync(id, userDto);
             if (!updated)
             {
                 return NotFound();

@@ -314,6 +314,7 @@ export default function SignupPage() {
             searchPlaceholder="Search country..."
             getOptionLabel={(opt) => opt.name}
             getOptionValue={(opt) => opt.code}
+            className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-slate-900 outline-none transition focus:border-sky-500"
             required
           />
 
@@ -327,6 +328,7 @@ export default function SignupPage() {
             getOptionLabel={(opt) => `${opt.symbol} ${opt.code} - ${opt.name}`}
             getOptionValue={(opt) => opt.code}
             required
+            className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-slate-900 outline-none transition focus:border-sky-500"
           />
 
           <label className="block space-y-2 md:col-span-2">

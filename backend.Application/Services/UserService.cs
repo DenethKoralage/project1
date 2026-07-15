@@ -26,9 +26,14 @@ public class UserService : IUserService
         return user == null ? null : MapToDto(user);
     }
 
-    public async Task<UserDto> CreateUserAsync(UserRegistrationDto userRegistrationDto)
+    public async Task<UserDto> CreateUserAsync(UserDto userDto)
     {
-        var normalizedEmail = NormalizeEmail(userRegistrationDto.Email);
+        if (string.IsNullOrWhiteSpace(userDto.Password) || userDto.IncomeAmount is null or <= 0)
+        {
+            throw new ArgumentException("Password and income amount are required.");
+        }
+
+        var normalizedEmail = NormalizeEmail(userDto.Email);
 
         if (await _userRepository.EmailExistsAsync(normalizedEmail))
         {
@@ -37,15 +42,15 @@ public class UserService : IUserService
 
         var user = new User
         {
-            Name = userRegistrationDto.Name.Trim(),
+            Name = userDto.Name.Trim(),
             Email = normalizedEmail,
-            Password = PasswordHelper.HashPassword(userRegistrationDto.Password),
-            Designation = userRegistrationDto.Designation.Trim(),
-            Workplace = userRegistrationDto.Workplace.Trim(),
-            HomeAddress = userRegistrationDto.HomeAddress.Trim(),
-            HomeCity = userRegistrationDto.HomeCity.Trim(),
-            Country = userRegistrationDto.Country.Trim(),
-            Currency = userRegistrationDto.Currency.Trim().ToUpperInvariant(),
+            Password = PasswordHelper.HashPassword(userDto.Password),
+            Designation = userDto.Designation.Trim(),
+            Workplace = userDto.Workplace.Trim(),
+            HomeAddress = userDto.HomeAddress.Trim(),
+            HomeCity = userDto.HomeCity.Trim(),
+            Country = userDto.Country.Trim(),
+            Currency = userDto.Currency.Trim().ToUpperInvariant(),
             CreatedAt = DateTime.UtcNow,
             UpdatedAt = DateTime.UtcNow,
             Expenses = new List<Expense>(),
@@ -54,7 +59,7 @@ public class UserService : IUserService
             [
                 Income.Create(
                     0,
-                    userRegistrationDto.IncomeAmount,
+                    userDto.IncomeAmount.Value,
                     "Monthly income",
                     "Salary",
                     DateTime.UtcNow,
@@ -66,7 +71,7 @@ public class UserService : IUserService
         return MapToDto(createdUser);
     }
 
-    public async Task<bool> UpdateUserAsync(int id, UserRegistrationDto userRegistrationDto)
+    public async Task<bool> UpdateUserAsync(int id, UserDto userDto)
     {
         var user = await _userRepository.GetUserByIdAsync(id);
         if (user == null)
@@ -74,25 +79,25 @@ public class UserService : IUserService
             return false;
         }
 
-        var normalizedEmail = NormalizeEmail(userRegistrationDto.Email);
+        var normalizedEmail = NormalizeEmail(userDto.Email);
         var existingUser = await _userRepository.GetUserByEmailAsync(normalizedEmail);
         if (existingUser != null && existingUser.Id != id)
         {
             throw new InvalidOperationException("User with this email already exists.");
         }
 
-        user.Name = userRegistrationDto.Name.Trim();
+        user.Name = userDto.Name.Trim();
         user.Email = normalizedEmail;
-        if (!string.IsNullOrWhiteSpace(userRegistrationDto.Password))
+        if (!string.IsNullOrWhiteSpace(userDto.Password))
         {
-            user.Password = PasswordHelper.HashPassword(userRegistrationDto.Password);
+            user.Password = PasswordHelper.HashPassword(userDto.Password);
         }
-        user.Designation = userRegistrationDto.Designation.Trim();
-        user.Workplace = userRegistrationDto.Workplace.Trim();
-        user.HomeAddress = userRegistrationDto.HomeAddress.Trim();
-        user.HomeCity = userRegistrationDto.HomeCity.Trim();
-        user.Country = userRegistrationDto.Country.Trim();
-        user.Currency = userRegistrationDto.Currency.Trim().ToUpperInvariant();
+        user.Designation = userDto.Designation.Trim();
+        user.Workplace = userDto.Workplace.Trim();
+        user.HomeAddress = userDto.HomeAddress.Trim();
+        user.HomeCity = userDto.HomeCity.Trim();
+        user.Country = userDto.Country.Trim();
+        user.Currency = userDto.Currency.Trim().ToUpperInvariant();
         user.UpdatedAt = DateTime.UtcNow;
 
         await _userRepository.UpdateUserAsync(user);
