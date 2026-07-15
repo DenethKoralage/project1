@@ -1,145 +1,597 @@
+"use client";
+
 import Link from "next/link";
-import { notFound } from "next/navigation";
-import { getPortfolioBySlug, portfolioStrategies } from "@/lib/portfolio";
+import { use, useCallback, useEffect, useMemo, useState } from "react";
+import { useAuth } from "@/context/AuthContext";
+import { getWithAuth, postWithAuth } from "@/lib/authApi";
 
-export function generateStaticParams() {
-  return portfolioStrategies.map((portfolio) => ({
-    category: portfolio.slug,
-  }));
+const incomeSources = [
+  "Wages/Salary",
+  "Freelancing & Contracting",
+  "Self-Employment",
+  "Dividends",
+  "Interest",
+  "Others",
+];
+
+const emptyIncomeForm = {
+  Amount: "",
+  Source: "Wages/Salary",
+  Category: "Primary Income",
+  IncomeDate: new Date().toISOString().slice(0, 10),
+  Description: "",
+};
+
+const otherCategories = {
+  expenses: {
+    title: "Expenses",
+    text: "Expense tracking will use your spending DTO and category filters.",
+  },
+  budget: {
+    title: "Budget",
+    text: "Budget planning will show targets, usage, and remaining balances.",
+  },
+  "my-blogs": {
+    title: "My Blogs",
+    text: "Your blog tools live in the blog workspace.",
+    href: "/blog",
+  },
+};
+
+const pick = (item, pascal, camel) => item?.[pascal] ?? item?.[camel];
+
+const toDateInput = (value) => {
+  if (!value) return "";
+  return new Date(value).toISOString().slice(0, 10);
+};
+
+const formatMoney = (value) =>
+  new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency: "USD",
+    maximumFractionDigits: 0,
+  }).format(Number(value || 0));
+
+function groupIncome(incomes, mode) {
+  const formatter =
+    mode === "annual"
+      ? (date) => String(date.getFullYear())
+      : mode === "daily"
+        ? (date) =>
+          date.toLocaleDateString("en-US", {
+            month: "short",
+            day: "numeric",
+            year: "numeric",
+          })
+        : (date) =>
+          date.toLocaleDateString("en-US", {
+            month: "short",
+            year: "numeric",
+          });
+
+  // For daily mode we key by the date-only string so same-day entries merge correctly
+  const keyOf =
+    mode === "daily"
+      ? (date) => date.toISOString().slice(0, 10)
+      : formatter;
+
+  return incomes
+    .reduce((groups, income) => {
+      const date = new Date(pick(income, "IncomeDate", "incomeDate"));
+      const key = keyOf(date);
+      const label = formatter(date);
+      const existing = groups.find((group) => group.key === key);
+      const amount = Number(pick(income, "Amount", "amount") || 0);
+
+      if (existing) {
+        existing.amount += amount;
+      } else {
+        groups.push({ key, label, amount, time: date.getTime() });
+      }
+
+      return groups;
+    }, [])
+    .sort((a, b) => a.time - b.time);
 }
 
-export async function generateMetadata({ params }) {
-  const { category } = await params;
-  const portfolio = getPortfolioBySlug(category);
+function IncomeLineChart({ data }) {
+  const width = 760;
+  const height = 260;
+  const padding = { top: 34, right: 28, bottom: 46, left: 58 };
+  const maxAmount = Math.max(...data.map((item) => item.amount), 1);
+  const plotWidth = width - padding.left - padding.right;
+  const plotHeight = height - padding.top - padding.bottom;
+  const denominator = Math.max(data.length - 1, 1);
 
-  if (!portfolio) {
-    return {
-      title: "Portfolio Not Found",
-    };
-  }
+  const points = data.map((item, index) => {
+    const x =
+      data.length === 1
+        ? padding.left + plotWidth / 2
+        : padding.left + (index / denominator) * plotWidth;
+    const y = padding.top + plotHeight - (item.amount / maxAmount) * plotHeight;
+    return { ...item, x, y };
+  });
 
-  return {
-    title: portfolio.name,
-    description: portfolio.summary,
-  };
-}
-
-export default async function PortfolioCategoryPage({ params }) {
-  const { category } = await params;
-  const portfolio = getPortfolioBySlug(category);
-
-  if (!portfolio) {
-    notFound();
-  }
+  const linePath = points
+    .map((point, index) => `${index === 0 ? "M" : "L"} ${point.x} ${point.y}`)
+    .join(" ");
+  const areaPath = `${linePath} L ${points.at(-1).x} ${padding.top + plotHeight} L ${points[0].x} ${padding.top + plotHeight} Z`;
+  const yTicks = [maxAmount, maxAmount / 2, 0];
 
   return (
-    <main className="relative w-full space-y-10 pb-16">
-      <section className="relative overflow-hidden rounded-3xl border border-white/40 bg-gradient-to-br from-emerald-100 via-cyan-50 to-sky-100 p-8 shadow-[0_20px_70px_rgba(13,38,76,0.12)] md:p-12">
-        <div className="absolute -left-12 top-10 h-48 w-48 rounded-full bg-emerald-300/30 blur-3xl" />
-        <div className="absolute -right-16 bottom-0 h-56 w-56 rounded-full bg-sky-300/30 blur-3xl" />
+    <div className="h-full overflow-x-auto">
+      <svg
+        viewBox={`0 0 ${width} ${height}`}
+        className="h-full min-w-[680px] text-stone-500"
+        role="img"
+        aria-label="Income progress line chart"
+      >
+        <defs>
+          <linearGradient id="incomeLineFill" x1="0" x2="0" y1="0" y2="1">
+            <stop offset="0%" stopColor="#059669" stopOpacity="0.24" />
+            <stop offset="100%" stopColor="#059669" stopOpacity="0.02" />
+          </linearGradient>
+        </defs>
 
-        <div className="relative max-w-3xl space-y-5">
-          <p className="inline-flex rounded-full border border-emerald-900/10 bg-white/60 px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em] text-slate-700">
-            {portfolio.risk}
-          </p>
-          <h1 className="text-4xl font-bold leading-tight text-slate-900 md:text-5xl">
-            {portfolio.name}
-          </h1>
-          <p className="max-w-2xl text-base leading-relaxed text-slate-700 md:text-lg">
-            {portfolio.description}
+        {yTicks.map((tick) => {
+          const y = padding.top + plotHeight - (tick / maxAmount) * plotHeight;
+          return (
+            <g key={tick}>
+              <line
+                x1={padding.left}
+                x2={width - padding.right}
+                y1={y}
+                y2={y}
+                stroke="#e7e5e4"
+              />
+              <text
+                x={padding.left - 10}
+                y={y + 4}
+                textAnchor="end"
+                className="fill-stone-400 text-[11px]"
+              >
+                {formatMoney(tick)}
+              </text>
+            </g>
+          );
+        })}
+
+        <line
+          x1={padding.left}
+          x2={padding.left}
+          y1={padding.top}
+          y2={padding.top + plotHeight}
+          stroke="#d6d3d1"
+        />
+        <line
+          x1={padding.left}
+          x2={width - padding.right}
+          y1={padding.top + plotHeight}
+          y2={padding.top + plotHeight}
+          stroke="#d6d3d1"
+        />
+
+        <path d={areaPath} fill="url(#incomeLineFill)" />
+        <path
+          d={linePath}
+          fill="none"
+          stroke="#059669"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth="4"
+        />
+
+        {points.map((point) => (
+          <g key={point.key ?? point.label}>
+            <line
+              x1={point.x}
+              x2={point.x}
+              y1={point.y}
+              y2={padding.top + plotHeight}
+              stroke="#d6d3d1"
+              strokeDasharray="4 5"
+            />
+            <circle
+              cx={point.x}
+              cy={point.y}
+              r="6"
+              className="fill-white stroke-emerald-600"
+              strokeWidth="4"
+            />
+            <text
+              x={point.x}
+              y={point.y - 14}
+              textAnchor="middle"
+              className="fill-stone-800 text-[12px] font-semibold"
+            >
+              {formatMoney(point.amount)}
+            </text>
+            <text
+              x={point.x}
+              y={padding.top + plotHeight + 26}
+              textAnchor="middle"
+              className="fill-stone-500 text-[12px]"
+            >
+              {point.label}
+            </text>
+          </g>
+        ))}
+      </svg>
+    </div>
+  );
+}
+
+function IncomePage() {
+  const { token, loading, user } = useAuth();
+  const [incomes, setIncomes] = useState([]);
+  const [form, setForm] = useState(emptyIncomeForm);
+  const [chartMode, setChartMode] = useState("daily");
+  const [search, setSearch] = useState("");
+  const [status, setStatus] = useState({ type: "", message: "" });
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSaving, setIsSaving] = useState(false);
+
+  const loadIncomes = useCallback(async () => {
+    if (!token) return;
+
+    try {
+      setIsLoading(true);
+      const data = await getWithAuth("/api/income", token);
+      setIncomes(Array.isArray(data) ? data : []);
+      setStatus({ type: "", message: "" });
+    } catch (error) {
+      setStatus({
+        type: "error",
+        message: error.message || "Could not load incomes.",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  }, [token]);
+
+  useEffect(() => {
+    const timeoutId = window.setTimeout(() => {
+      if (!loading && token) {
+        loadIncomes();
+      } else if (!loading && !token) {
+        setIsLoading(false);
+        setStatus({ type: "error", message: "Log in to manage income." });
+      }
+    }, 0);
+
+    return () => window.clearTimeout(timeoutId);
+  }, [loadIncomes, loading, token]);
+
+  const filteredIncomes = useMemo(() => {
+    const term = search.trim().toLowerCase();
+    if (!term) return incomes;
+
+    return incomes.filter((income) => {
+      const source = String(pick(income, "Source", "source") || "").toLowerCase();
+      const date = toDateInput(pick(income, "IncomeDate", "incomeDate"));
+      return source.includes(term) || date.includes(term);
+    });
+  }, [incomes, search]);
+
+  const chartData = useMemo(
+    () => groupIncome(filteredIncomes, chartMode),
+    [chartMode, filteredIncomes]
+  );
+
+  const totalIncome = filteredIncomes.reduce(
+    (total, income) => total + Number(pick(income, "Amount", "amount") || 0),
+    0
+  );
+
+  const handleChange = (event) => {
+    const { name, value } = event.target;
+    setForm((current) => ({ ...current, [name]: value }));
+  };
+
+  const handleSubmit = async (event) => {
+    event.preventDefault();
+
+    if (Number(form.Amount) <= 0) {
+      setStatus({ type: "error", message: "Enter an amount greater than zero." });
+      return;
+    }
+
+    try {
+      setIsSaving(true);
+      setStatus({ type: "", message: "" });
+      await postWithAuth(
+        "/api/income",
+        {
+          Amount: Number(form.Amount),
+          Source: form.Source,
+          Category: form.Category,
+          IncomeDate: new Date(form.IncomeDate).toISOString(),
+          Description: form.Description,
+        },
+        token
+      );
+      setForm(emptyIncomeForm);
+      setStatus({ type: "success", message: "Income added successfully." });
+      await loadIncomes();
+    } catch (error) {
+      setStatus({
+        type: "error",
+        message: error.message || "Could not add income.",
+      });
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  return (
+    <main className="mx-auto w-full max-w-6xl space-y-6 py-8">
+      <div className="flex flex-wrap items-end justify-between gap-4 border-b border-stone-200 pb-5">
+        <div>
+          <Link href="/portfolio" className="text-sm font-semibold text-emerald-700">
+            Portfolio
+          </Link>
+          <h1 className="mt-2 text-3xl font-bold text-stone-950">Income</h1>
+          <p className="mt-2 max-w-2xl text-sm leading-6 text-stone-600">
+            Track received income by date and amount, filter progress monthly or
+            annually, and keep each source searchable.
           </p>
         </div>
-      </section>
-
-      <section className="grid gap-6 lg:grid-cols-[1.05fr_0.95fr]">
-        <article className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm md:p-8">
-          <p className="text-sm font-semibold uppercase tracking-[0.22em] text-sky-700">
-            Strategy Overview
+        <div className="rounded-lg border border-stone-200 bg-white px-4 py-3 text-right">
+          <p className="text-xs font-semibold uppercase tracking-[0.16em] text-stone-400">
+            Visible Total
           </p>
-          <div className="mt-5 grid gap-4 sm:grid-cols-2">
-            <div className="rounded-2xl border border-slate-100 bg-slate-50 p-4">
-              <p className="text-sm font-semibold text-slate-500">Best For</p>
-              <p className="mt-2 text-base font-semibold text-slate-900">
-                {portfolio.audience}
-              </p>
-            </div>
-            <div className="rounded-2xl border border-slate-100 bg-slate-50 p-4">
-              <p className="text-sm font-semibold text-slate-500">Objective</p>
-              <p className="mt-2 text-base font-semibold text-slate-900">
-                {portfolio.objective}
-              </p>
-            </div>
-            <div className="rounded-2xl border border-slate-100 bg-slate-50 p-4">
-              <p className="text-sm font-semibold text-slate-500">
-                Time Horizon
-              </p>
-              <p className="mt-2 text-base font-semibold text-slate-900">
-                {portfolio.timeHorizon}
-              </p>
-            </div>
-            <div className="rounded-2xl border border-slate-100 bg-slate-50 p-4">
-              <p className="text-sm font-semibold text-slate-500">Risk Level</p>
-              <p className="mt-2 text-base font-semibold text-slate-900">
-                {portfolio.risk}
-              </p>
-            </div>
-          </div>
+          <p className="mt-1 text-2xl font-bold text-stone-950">
+            {formatMoney(totalIncome)}
+          </p>
+        </div>
+      </div>
 
-          <div className="mt-8">
-            <h2 className="text-2xl font-bold text-slate-900 md:text-3xl">
-              Suggested Allocation
-            </h2>
-            <div className="mt-5 space-y-3">
-              {portfolio.allocations.map((allocation) => (
-                <div
-                  key={allocation.label}
-                  className="rounded-2xl border border-slate-100 bg-slate-50 px-4 py-4"
+      {status.message ? (
+        <p
+          className={`rounded-lg px-4 py-3 text-sm font-medium ${status.type === "success"
+            ? "bg-emerald-50 text-emerald-800"
+            : "bg-rose-50 text-rose-800"
+            }`}
+        >
+          {status.message}
+        </p>
+      ) : null}
+
+      <section className="grid gap-5 lg:grid-cols-[1.3fr_0.7fr]">
+        <div className="rounded-lg border border-stone-200 bg-white p-5 shadow-sm">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-stone-400">
+                Current income progress
+              </p>
+              <h2 className="mt-1 text-xl font-semibold text-stone-950">
+                Received by date and amount
+              </h2>
+            </div>
+            <div className="inline-flex rounded-md border border-stone-200 bg-stone-50 p-1">
+              {["daily", "monthly", "annual"].map((mode) => (
+                <button
+                  key={mode}
+                  type="button"
+                  onClick={() => setChartMode(mode)}
+                  className={`rounded px-3 py-1.5 text-sm font-semibold capitalize ${chartMode === mode
+                    ? "bg-stone-950 text-white"
+                    : "text-stone-600 hover:text-stone-950"
+                    }`}
                 >
-                  <div className="flex items-center justify-between gap-3">
-                    <span className="text-sm text-slate-600">
-                      {allocation.label}
-                    </span>
-                    <span className="text-sm font-semibold text-slate-900">
-                      {allocation.value}
-                    </span>
-                  </div>
-                </div>
+                  {mode}
+                </button>
               ))}
             </div>
           </div>
-        </article>
 
-        <aside className="rounded-3xl border border-slate-200 bg-slate-900 p-6 text-white shadow-sm md:p-8">
-          <p className="text-sm font-semibold uppercase tracking-[0.22em] text-emerald-200">
-            Key Principles
-          </p>
-          <div className="mt-5 space-y-3">
-            {portfolio.principles.map((principle) => (
-              <div
-                key={principle}
-                className="rounded-2xl border border-white/10 bg-white/5 px-4 py-4 text-sm leading-7 text-slate-200"
-              >
-                {principle}
+          <div className="mt-6 h-72 border-l border-b border-stone-200 px-3 pb-4">
+            {isLoading ? (
+              <div className="flex h-full items-center justify-center text-sm text-stone-500">
+                Loading income progress...
               </div>
-            ))}
+            ) : chartData.length ? (
+              <IncomeLineChart data={chartData} />
+            ) : (
+              <div className="flex h-full items-center justify-center text-sm text-stone-500">
+                No income records match this view.
+              </div>
+            )}
           </div>
+        </div>
 
-          <div className="mt-8 flex flex-wrap gap-3">
-            <Link
-              href="/portfolio"
-              className="rounded-xl bg-white px-5 py-3 text-sm font-semibold text-slate-900"
+        <form
+          onSubmit={handleSubmit}
+          className="rounded-lg border border-stone-200 bg-white p-5 shadow-sm"
+        >
+          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-stone-400">
+            Add new income
+          </p>
+          <div className="mt-4 space-y-4">
+            <label className="block">
+              <span className="text-sm font-medium text-stone-700">Amount</span>
+              <input
+                name="Amount"
+                type="number"
+                min="0.01"
+                step="0.01"
+                value={form.Amount}
+                onChange={handleChange}
+                required
+                className="mt-1 w-full rounded-md border border-stone-200 px-3 py-2 text-stone-900 outline-none focus:border-emerald-500"
+              />
+            </label>
+
+            <label className="block">
+              <span className="text-sm font-medium text-stone-700">Source</span>
+              <select
+                name="Source"
+                value={form.Source}
+                onChange={handleChange}
+                required
+                className="mt-1 w-full rounded-md border border-stone-200 bg-white px-3 py-2 text-stone-900 outline-none focus:border-emerald-500"
+              >
+                {incomeSources.map((source) => (
+                  <option key={source} value={source}>
+                    {source}
+                  </option>
+                ))}
+              </select>
+            </label>
+
+            <label className="block">
+              <span className="text-sm font-medium text-stone-700">Category</span>
+              <input
+                name="Category"
+                value={form.Category}
+                onChange={handleChange}
+                required
+                maxLength={120}
+                className="mt-1 w-full rounded-md border border-stone-200 px-3 py-2 text-stone-900 outline-none focus:border-emerald-500"
+              />
+            </label>
+
+            <label className="block">
+              <span className="text-sm font-medium text-stone-700">Income Date</span>
+              <input
+                name="IncomeDate"
+                type="date"
+                value={form.IncomeDate}
+                onChange={handleChange}
+                required
+                className="mt-1 w-full rounded-md border border-stone-200 px-3 py-2 text-stone-900 outline-none focus:border-emerald-500"
+              />
+            </label>
+
+            <label className="block">
+              <span className="text-sm font-medium text-stone-700">Description</span>
+              <textarea
+                name="Description"
+                value={form.Description}
+                onChange={handleChange}
+                maxLength={512}
+                rows={3}
+                className="mt-1 w-full rounded-md border border-stone-200 px-3 py-2 text-stone-900 outline-none focus:border-emerald-500"
+              />
+            </label>
+
+            <button
+              type="submit"
+              disabled={isSaving || !token}
+              className="w-full rounded-md bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-60"
             >
-              Back to Portfolio
-            </Link>
-            <Link
-              href="/contacts"
-              className="rounded-xl border border-white/20 px-5 py-3 text-sm font-semibold text-white"
-            >
-              Send Feedback
-            </Link>
+              {isSaving ? "Adding..." : "Add Income"}
+            </button>
           </div>
-        </aside>
+        </form>
+      </section>
+
+      <section className="rounded-lg border border-stone-200 bg-white p-5 shadow-sm">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-stone-400">
+              Income records
+            </p>
+            <h2 className="mt-1 text-xl font-semibold text-stone-950">
+              Search by date or source
+            </h2>
+          </div>
+          <input
+            value={search}
+            onChange={(event) => setSearch(event.target.value)}
+            placeholder="Search source or YYYY-MM-DD"
+            className="w-full rounded-md border border-stone-200 px-3 py-2 text-sm text-stone-900 outline-none focus:border-emerald-500 sm:w-72"
+          />
+        </div>
+
+        <div className="mt-5 overflow-x-auto">
+          <table className="w-full min-w-[720px] border-collapse text-left text-sm">
+            <thead>
+              <tr className="border-b border-stone-200 text-xs uppercase tracking-[0.14em] text-stone-400">
+                <th className="py-3 pr-4">Date</th>
+                <th className="py-3 pr-4">Source</th>
+                <th className="py-3 pr-4">Category</th>
+                <th className="py-3 pr-4 text-right">Amount</th>
+                <th className="py-3">Description</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filteredIncomes.map((income) => (
+                <tr
+                  key={pick(income, "Id", "id")}
+                  className="border-b border-stone-100 text-stone-700"
+                >
+                  <td className="py-3 pr-4">
+                    {toDateInput(pick(income, "IncomeDate", "incomeDate"))}
+                  </td>
+                  <td className="py-3 pr-4 font-medium text-stone-950">
+                    {pick(income, "Source", "source")}
+                  </td>
+                  <td className="py-3 pr-4">
+                    {pick(income, "Category", "category")}
+                  </td>
+                  <td className="py-3 pr-4 text-right font-semibold text-emerald-700">
+                    {formatMoney(pick(income, "Amount", "amount"))}
+                  </td>
+                  <td className="py-3 text-stone-500">
+                    {pick(income, "Description", "description") || "-"}
+                  </td>
+                </tr>
+              ))}
+              {!filteredIncomes.length ? (
+                <tr>
+                  <td colSpan={5} className="py-8 text-center text-stone-500">
+                    No incomes found for {user?.Name ?? user?.name ?? "this user"}.
+                  </td>
+                </tr>
+              ) : null}
+            </tbody>
+          </table>
+        </div>
       </section>
     </main>
   );
+}
+
+function PlaceholderCategory({ category }) {
+  const detail = otherCategories[category];
+
+  if (!detail) {
+    return (
+      <main className="mx-auto w-full max-w-3xl py-10">
+        <h1 className="text-3xl font-bold text-stone-950">Category not found</h1>
+        <Link href="/portfolio" className="mt-4 inline-flex text-sm font-semibold text-emerald-700">
+          Back to portfolio
+        </Link>
+      </main>
+    );
+  }
+
+  return (
+    <main className="mx-auto w-full max-w-3xl space-y-4 py-10">
+      <Link href="/portfolio" className="text-sm font-semibold text-emerald-700">
+        Portfolio
+      </Link>
+      <h1 className="text-3xl font-bold text-stone-950">{detail.title}</h1>
+      <p className="text-sm leading-6 text-stone-600">{detail.text}</p>
+      {detail.href ? (
+        <Link
+          href={detail.href}
+          className="inline-flex rounded-md bg-stone-950 px-4 py-2 text-sm font-semibold text-white"
+        >
+          Open
+        </Link>
+      ) : null}
+    </main>
+  );
+}
+
+export default function PortfolioCategoryPage({ params }) {
+  const { category } = use(params);
+
+  if (category === "income") {
+    return <IncomePage />;
+  }
+
+  return <PlaceholderCategory category={category} />;
 }

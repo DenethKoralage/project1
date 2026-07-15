@@ -77,6 +77,25 @@ export async function getWithAuth(path, token) {
   return data;
 }
 
+export async function postWithAuth(path, payload, token) {
+  const response = await fetch(`${API_BASE_URL}${path}`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify(payload),
+  });
+
+  const data = await readResponse(response);
+
+  if (!response.ok) {
+    throw new Error(getErrorMessage(data, response));
+  }
+
+  return data;
+}
+
 export async function putWithAuth(path, payload, token) {
   const response = await fetch(`${API_BASE_URL}${path}`, {
     method: "PUT",
