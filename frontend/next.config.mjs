@@ -5,6 +5,9 @@ const nextConfig = {
   reactCompiler: true,
   turbopack: {
     root: fileURLToPath(new URL(".", import.meta.url)),
+    resolveAlias: {
+      "@/*": "./src/*",
+    },
   },
 };
 

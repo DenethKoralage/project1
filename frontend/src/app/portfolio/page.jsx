@@ -15,7 +15,7 @@ const categories = [
     kicker: "Control spending",
     description:
       "Review outgoing money by category, date, and amount so spending patterns stay visible.",
-    metric: "Coming next",
+    metric: "Track spending",
   },
   {
     href: "/portfolio/budget",

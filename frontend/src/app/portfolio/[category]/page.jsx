@@ -4,6 +4,7 @@ import Link from "next/link";
 import { use, useCallback, useEffect, useMemo, useState } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { getWithAuth, postWithAuth } from "@/lib/authApi";
+import { ExpensesPage } from "./expenses/ExpensesPage";
 
 const incomeSources = [
   "Wages/Salary",
@@ -591,6 +592,10 @@ export default function PortfolioCategoryPage({ params }) {
 
   if (category === "income") {
     return <IncomePage />;
+  }
+
+  if (category === "expenses") {
+    return <ExpensesPage />;
   }
 
   return <PlaceholderCategory category={category} />;
