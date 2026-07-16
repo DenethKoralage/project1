@@ -44,6 +44,7 @@ public class AppDbContext : DbContext
             entity.Property(budget => budget.Amount).HasPrecision(18, 2);
             entity.Property(budget => budget.TotalBudget).HasPrecision(18, 2);
             entity.Property(budget => budget.RemainingBudget).HasPrecision(18, 2);
+            entity.Property(budget => budget.IsSpent).HasDefaultValue(false);
 
             entity.HasOne(budget => budget.User)
                 .WithMany(user => user.Budgets)

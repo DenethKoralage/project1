@@ -162,13 +162,18 @@ export default function ProfilePage() {
       setEditForm(buildEditForm(u));
       setProfileError("");
     } catch (error) {
-      console.error("Error fetching profile:", error);
+      if (error.status === 401) {
+        logout();
+        router.replace("/login");
+        return;
+      }
+
       setProfile(null);
       setProfileError("Could not load your profile from the backend. Please log in again.");
     } finally {
       setProfileLoading(false);
     }
-  }, [authUser, token]);
+  }, [authUser, logout, router, token]);
 
   // Fetch the latest profile from the .NET backend.
   useEffect(() => {
@@ -217,7 +222,12 @@ export default function ProfilePage() {
       setUpdateStatus({ type: "success", message: "Profile updated successfully!" });
       setTimeout(() => setUpdateStatus({ type: "", message: "" }), 3000);
     } catch (error) {
-      console.error("Error updating profile:", error);
+      if (error.status === 401) {
+        logout();
+        router.replace("/login");
+        return;
+      }
+
       setUpdateStatus({
         type: "error",
         message: error.message || "Failed to update profile",

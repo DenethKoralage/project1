@@ -22,8 +22,8 @@ const categories = [
     name: "Budget",
     kicker: "Plan allocations",
     description:
-      "Set budget targets, compare usage, and keep remaining balances easy to scan.",
-    metric: "Coming next",
+      "View income minus expenses, reserve money for planned purposes, and convert spent allocations into expenses.",
+    metric: "Live budget",
   },
   {
     href: "/blog",

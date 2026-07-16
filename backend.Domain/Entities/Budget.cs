@@ -7,11 +7,13 @@ public class Budget
     public decimal Amount { get; set; }
     public string Title { get; set; } = string.Empty;
     public string Category { get; set; } = string.Empty;
-    public DateTime StartDate { get; set; }
-    public DateTime EndDate { get; set; }
+    public DateTime ExpectedDate { get; set; }
     public string Description { get; set; } = string.Empty;
     public decimal TotalBudget { get; set; }
     public decimal RemainingBudget { get; set; }
+    public bool IsSpent { get; set; }
+    public DateTime? SpentAt { get; set; }
+    public Guid? ExpenseId { get; set; }
     public int UserId { get; set; }
     public User User { get; set; } = null!;
 
@@ -21,8 +23,7 @@ public class Budget
         decimal amount,
         string title,
         string category,
-        DateTime startDate,
-        DateTime endDate,
+        DateTime expectedDate,
         string description,
         decimal? remainingBudget = null)
     {
@@ -32,7 +33,7 @@ public class Budget
             UserId = userId
         };
 
-        budget.UpdateDetails(name, amount, title, category, startDate, endDate, description, remainingBudget);
+        budget.UpdateDetails(name, amount, title, category, expectedDate, description, remainingBudget);
         return budget;
     }
 
@@ -41,8 +42,7 @@ public class Budget
         decimal amount,
         string title,
         string category,
-        DateTime startDate,
-        DateTime endDate,
+        DateTime expectedDate,
         string description,
         decimal? remainingBudget = null)
     {
@@ -61,17 +61,16 @@ public class Budget
             throw new ArgumentException("Budget category is required.", nameof(category));
         }
 
-        if (endDate < startDate)
+        if (expectedDate < DateTime.UtcNow.Date)
         {
-            throw new ArgumentException("Budget end date cannot be earlier than start date.", nameof(endDate));
+            throw new ArgumentException("Budget expected date cannot be in the past.", nameof(expectedDate));
         }
 
         Name = name.Trim();
         Amount = amount;
         Title = string.IsNullOrWhiteSpace(title) ? Name : title.Trim();
         Category = category.Trim();
-        StartDate = startDate;
-        EndDate = endDate;
+        ExpectedDate = expectedDate;
         Description = description.Trim();
         TotalBudget = amount;
         RemainingBudget = remainingBudget ?? amount;
@@ -119,7 +118,19 @@ public class Budget
 
     public bool IsActive(DateTime date)
     {
-        var currentDate = date.Date;
-        return currentDate >= StartDate.Date && currentDate <= EndDate.Date;
+        return date.Date == ExpectedDate.Date;
+    }
+
+    public void MarkAsSpent(Guid expenseId, DateTime spentAt)
+    {
+        if (IsSpent)
+        {
+            throw new InvalidOperationException("Budget allocation is already spent.");
+        }
+
+        RemainingBudget = 0;
+        IsSpent = true;
+        SpentAt = spentAt;
+        ExpenseId = expenseId;
     }
 }

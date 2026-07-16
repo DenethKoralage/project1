@@ -13,10 +13,12 @@ public class BudgetDto
     [System.ComponentModel.DataAnnotations.Required]
     [System.ComponentModel.DataAnnotations.StringLength(120)]
     public string Category { get; set; } = string.Empty;
-    public DateTime StartDate { get; set; }
-    public DateTime EndDate { get; set; }
+    public DateTime ExpectedDate { get; set; }
     [System.ComponentModel.DataAnnotations.StringLength(512)]
     public string Description { get; set; } = string.Empty;
     public decimal TotalBudget { get; set; }
     public decimal RemainingBudget { get; set; }
+    public bool IsSpent { get; set; }
+    public DateTime? SpentAt { get; set; }
+    public Guid? ExpenseId { get; set; }
 }

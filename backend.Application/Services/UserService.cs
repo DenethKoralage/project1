@@ -203,11 +203,13 @@ public class UserService : IUserService
                 Amount = b.Amount,
                 Title = b.Title,
                 Category = b.Category,
-                StartDate = b.StartDate,
-                EndDate = b.EndDate,
+                ExpectedDate = b.ExpectedDate,
                 Description = b.Description,
                 TotalBudget = b.TotalBudget,
-                RemainingBudget = b.RemainingBudget
+                RemainingBudget = b.RemainingBudget,
+                IsSpent = b.IsSpent,
+                SpentAt = b.SpentAt,
+                ExpenseId = b.ExpenseId
             }).ToList(),
         };
     }

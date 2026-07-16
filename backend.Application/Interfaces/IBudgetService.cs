@@ -9,5 +9,6 @@ public interface IBudgetService
     Task<BudgetDto> GetBudgetSummaryAsync(int userId);
     Task<BudgetDto> CreateBudgetAsync(BudgetDto budgetDto, int userId);
     Task<bool> UpdateBudgetAsync(Guid id, BudgetDto budgetDto, int userId);
+    Task<bool> MarkBudgetAsSpentAsync(Guid id, int userId);
     Task<bool> DeleteBudgetAsync(Guid id, int userId);
 }

@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { use, useCallback, useEffect, useMemo, useState } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { getWithAuth } from "@/lib/authApi";
@@ -137,9 +138,9 @@ export function ExpensesPage() {
     <main className="mx-auto w-full max-w-6xl space-y-6 py-8">
       <div className="flex flex-wrap items-end justify-between gap-4 border-b border-stone-200 pb-5">
         <div>
-          <a href="/portfolio" className="text-sm font-semibold text-emerald-700">
+          <Link href="/portfolio" className="text-sm font-semibold text-emerald-700">
             Portfolio
-          </a>
+          </Link>
           <h1 className="mt-2 text-3xl font-bold text-stone-950">Expenses</h1>
           <p className="mt-2 max-w-2xl text-sm leading-6 text-stone-600">
             Track outgoing money by category, date, and amount, filter progress

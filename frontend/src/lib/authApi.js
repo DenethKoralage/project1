@@ -42,6 +42,13 @@ function getErrorMessage(data, response) {
   );
 }
 
+function createRequestError(data, response) {
+  const error = new Error(getErrorMessage(data, response));
+  error.status = response.status;
+  error.statusText = response.statusText;
+  return error;
+}
+
 export async function postAuth(path, payload) {
   const response = await fetch(`${API_BASE_URL}${path}`, {
     method: "POST",
@@ -54,7 +61,7 @@ export async function postAuth(path, payload) {
   const data = await readResponse(response);
 
   if (!response.ok) {
-    throw new Error(getErrorMessage(data, response));
+    throw createRequestError(data, response);
   }
 
   return data;
@@ -71,7 +78,7 @@ export async function getWithAuth(path, token) {
   const data = await readResponse(response);
 
   if (!response.ok) {
-    throw new Error(getErrorMessage(data, response));
+    throw createRequestError(data, response);
   }
 
   return data;
@@ -90,7 +97,7 @@ export async function postWithAuth(path, payload, token) {
   const data = await readResponse(response);
 
   if (!response.ok) {
-    throw new Error(getErrorMessage(data, response));
+    throw createRequestError(data, response);
   }
 
   return data;
@@ -113,7 +120,28 @@ export async function putWithAuth(path, payload, token) {
   const data = await readResponse(response);
 
   if (!response.ok) {
-    throw new Error(getErrorMessage(data, response));
+    throw createRequestError(data, response);
+  }
+
+  return data;
+}
+
+export async function deleteWithAuth(path, token) {
+  const response = await fetch(`${API_BASE_URL}${path}`, {
+    method: "DELETE",
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+  if (response.status === 204) {
+    return null;
+  }
+
+  const data = await readResponse(response);
+
+  if (!response.ok) {
+    throw createRequestError(data, response);
   }
 
   return data;
