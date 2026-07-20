@@ -15,6 +15,14 @@ const incomeSources = [
   "Others",
 ];
 
+const csvEscape = (value) => {
+  const str = String(value ?? "");
+  if (/[",\n]/.test(str)) {
+    return `"${str.replace(/"/g, '""')}"`;
+  }
+  return str;
+};
+
 const emptyIncomeForm = {
   Amount: "",
   Source: "Wages/Salary",
@@ -334,6 +342,30 @@ function IncomePage() {
     }
   };
 
+  const handleExport = () => {
+    const header = ["Date", "Source", "Category", "Amount", "Description"];
+    const rows = incomes.map((income) => {
+      const date = toDateInput(pick(income, "IncomeDate", "incomeDate"));
+      const source = pick(income, "Source", "source");
+      const category = pick(income, "Category", "category");
+      const amount = formatMoney(pick(income, "Amount", "amount"));
+      const description = pick(income, "Description", "description") || "-";
+      return [date, source, category, amount, description];
+    });
+
+    const csvContent = [header, ...rows].map((row) => row.map(csvEscape).join(",")).join("\n");
+    const blob = new Blob([csvContent], { type: "text/csv" });
+    const url = URL.createObjectURL(blob);
+
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = "incomes.csv";
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  };
+
   return (
     <main className="mx-auto w-full max-w-6xl space-y-6 py-8">
       <div className="flex flex-wrap items-end justify-between gap-4 border-b border-stone-200 pb-5">
@@ -423,12 +455,24 @@ function IncomePage() {
               Search by date or source
             </h2>
           </div>
-          <input
+          <select
             value={search}
-            onChange={(event) => setSearch(event.target.value)}
-            placeholder="Search source or YYYY-MM-DD"
-            className="w-full rounded-md border border-stone-200 px-3 py-2 text-sm text-stone-900 outline-none focus:border-emerald-500 sm:w-72"
-          />
+            onChange={(e) => setSearch(e.target.value)}
+            className="rounded-md border border-stone-200 bg-white px-3 py-2 text-sm text-stone-700 shadow-sm outline-none transition-colors focus:border-rose-500 focus:ring-1 focus:ring-rose-500"
+          >
+            <option value="">All</option>
+            {incomeSources.map((source) => (
+              <option key={source} value={source}>
+                {source}
+              </option>
+            ))}
+          </select>
+          <button
+            onClick={handleExport}
+            className="rounded-md border border-rose-500 bg-rose-50 px-3 py-1.5 text-xs font-semibold text-rose-600 hover:bg-rose-50/10 disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            Export CSV
+          </button>
         </div>
 
         <div className="mt-5 overflow-x-auto">
