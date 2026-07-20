@@ -69,6 +69,9 @@ const formatMoney = (value) =>
     maximumFractionDigits: 0,
   }).format(Number(value || 0));
 
+// A search string counts as a "date" filter when it matches YYYY-MM-DD
+const isDateString = (value) => /^\d{4}-\d{2}-\d{2}$/.test(value);
+
 function groupIncome(incomes, mode) {
   const formatter =
     mode === "annual"
@@ -342,19 +345,24 @@ function IncomePage() {
     }
   };
 
+  // Sets the shared search string from a date input value (YYYY-MM-DD, or "" to clear)
+  const searchDate = (date) => {
+    setSearch(date);
+  };
+
   const handleExport = () => {
     const header = ["Date", "Source", "Category", "Amount", "Description"];
     const rows = incomes.map((income) => {
       const date = toDateInput(pick(income, "IncomeDate", "incomeDate"));
       const source = pick(income, "Source", "source");
       const category = pick(income, "Category", "category");
-      const amount = formatMoney(pick(income, "Amount", "amount"));
+      const amount = Number(pick(income, "Amount", "amount") || 0);
       const description = pick(income, "Description", "description") || "-";
       return [date, source, category, amount, description];
     });
 
     const csvContent = [header, ...rows].map((row) => row.map(csvEscape).join(",")).join("\n");
-    const blob = new Blob([csvContent], { type: "text/csv" });
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
     const url = URL.createObjectURL(blob);
 
     const link = document.createElement("a");
@@ -456,7 +464,7 @@ function IncomePage() {
             </h2>
           </div>
           <select
-            value={search}
+            value={isDateString(search) ? "" : search}
             onChange={(e) => setSearch(e.target.value)}
             className="rounded-md border border-stone-200 bg-white px-3 py-2 text-sm text-stone-700 shadow-sm outline-none transition-colors focus:border-rose-500 focus:ring-1 focus:ring-rose-500"
           >
@@ -467,6 +475,13 @@ function IncomePage() {
               </option>
             ))}
           </select>
+          <input
+            type="date"
+            name="searchDate"
+            value={isDateString(search) ? search : ""}
+            onChange={(e) => searchDate(e.target.value)}
+            className="rounded-md border border-stone-200 bg-white px-3 py-2 text-sm text-stone-700 shadow-sm outline-none transition-colors focus:border-rose-500 focus:ring-1 focus:ring-rose-500"
+          />
           <button
             onClick={handleExport}
             className="rounded-md border border-rose-500 bg-rose-50 px-3 py-1.5 text-xs font-semibold text-rose-600 hover:bg-rose-50/10 disabled:cursor-not-allowed disabled:opacity-60"
@@ -917,6 +932,7 @@ function BudgetPage() {
         <p className="text-xs font-semibold uppercase tracking-[0.18em] text-stone-400">
           Budget allocations
         </p>
+
         <div className="mt-5 overflow-x-auto">
           <table className="w-full min-w-[760px] border-collapse text-left text-sm">
             <thead>

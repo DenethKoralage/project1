@@ -3,6 +3,7 @@ export const expenseCategories = [
   "Transportation",
   "Food & Groceries",
   "Health & Medical",
+  "Planned Spending",
   "Insurance",
   "Entertainment & Leisure",
   "Shopping",

@@ -38,6 +38,12 @@ export function ExpenseListTable({ expenses, search, setSearch, user }) {
     });
   }, [expenses, search]);
 
+  const isDateString = (value) => /^\d{4}-\d{2}-\d{2}$/.test(value);
+
+  const searchDate = (date) => {
+    setSearch(date);
+  };
+
   const handleExport = () => {
     const header = ["Date", "Category", "Amount", "Description"];
     const rows = filteredExpenses.map((expense) => {
@@ -78,7 +84,7 @@ export function ExpenseListTable({ expenses, search, setSearch, user }) {
           </h2>
         </div>
         <select
-          value={search}
+          value={isDateString(search) ? "" : search}
           onChange={(e) => setSearch(e.target.value)}
           className="rounded-md border border-stone-200 bg-white px-3 py-2 text-sm text-stone-700 shadow-sm outline-none transition-colors focus:border-rose-500 focus:ring-1 focus:ring-rose-500"
         >
@@ -89,6 +95,14 @@ export function ExpenseListTable({ expenses, search, setSearch, user }) {
             </option>
           ))}
         </select>
+
+        <input
+          type="date"
+          name="searchDate"
+          value={isDateString(search) ? search : ""}
+          onChange={(e) => setSearch(e.target.value)}
+          className="rounded-md border border-stone-200 bg-white px-3 py-2 text-sm text-stone-700 shadow-sm outline-none transition-colors focus:border-rose-500 focus:ring-1 focus:ring-rose-500"
+        />
         <button
           onClick={handleExport}
           className="rounded-md border border-stone-200 bg-white px-3 py-2 text-sm text-stone-700 shadow-sm outline-none transition-colors focus:border-rose-500 focus:ring-1 focus:ring-rose-500"
