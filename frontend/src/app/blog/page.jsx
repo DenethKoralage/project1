@@ -2,41 +2,54 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { addBlogPost, ensureSeededPosts } from "@/lib/blogs";
+import { useAuth } from "@/context/AuthContext";
+import { API_BASE_URL, getPublic, postFormWithAuth } from "@/lib/authApi";
 
 const initialForm = {
   title: "",
   category: "",
-  image: "",
+  image: null,
   excerpt: "",
   content: "",
 };
 
 export default function BlogPage() {
-  const [posts, setPosts] = useState(() => {
-    if (typeof window === "undefined") {
-      return [];
-    }
-
-    return ensureSeededPosts();
-  });
+  const { token, loading } = useAuth();
+  const [posts, setPosts] = useState([]);
   const [showComposer, setShowComposer] = useState(false);
   const [form, setForm] = useState(initialForm);
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
+  const [isLoadingPosts, setIsLoadingPosts] = useState(true);
+  const [isPublishing, setIsPublishing] = useState(false);
 
   useEffect(() => {
-    function handleStorageRefresh() {
-      setPosts(ensureSeededPosts());
+    let ignore = false;
+
+    async function loadPosts() {
+      try {
+        setIsLoadingPosts(true);
+        const data = await getPublic("/api/blog");
+        if (!ignore) setPosts(Array.isArray(data) ? data : []);
+      } catch (err) {
+        if (!ignore) setError(err.message || "Could not load blog posts.");
+      } finally {
+        if (!ignore) setIsLoadingPosts(false);
+      }
     }
 
-    window.addEventListener("storage", handleStorageRefresh);
-    return () => window.removeEventListener("storage", handleStorageRefresh);
+    loadPosts();
+    return () => {
+      ignore = true;
+    };
   }, []);
 
   function handleChange(event) {
-    const { name, value } = event.target;
-    setForm((previous) => ({ ...previous, [name]: value }));
+    const { name, value, files, type } = event.target;
+    setForm((previous) => ({
+      ...previous,
+      [name]: type === "file" ? files?.[0] ?? null : value,
+    }));
     setError("");
     setMessage("");
   }
@@ -47,7 +60,7 @@ export default function BlogPage() {
     setError("");
   }
 
-  function handleSubmit(event) {
+  async function handleSubmit(event) {
     event.preventDefault();
 
     if (!form.title.trim() || !form.excerpt.trim() || !form.content.trim()) {
@@ -55,20 +68,37 @@ export default function BlogPage() {
       return;
     }
 
-    const newPost = addBlogPost({
-      title: form.title.trim(),
-      category: form.category.trim() || "General",
-      image: form.image.trim() || "/f4.png",
-      excerpt: form.excerpt.trim(),
-      content: form.content.trim(),
-      author: "Community Writer",
-    });
+    if (!token) {
+      setError("Log in before publishing a blog post.");
+      return;
+    }
 
-    setPosts((previous) => [newPost, ...previous]);
-    setForm(initialForm);
-    setShowComposer(false);
-    setError("");
-    setMessage("Your new blog post has been published.");
+    try {
+      setIsPublishing(true);
+      const payload = new FormData();
+      payload.append("title", form.title.trim());
+      payload.append("category", form.category.trim() || "General");
+      payload.append("excerpt", form.excerpt.trim());
+      payload.append("content", form.content.trim());
+      if (form.image) payload.append("image", form.image);
+
+      const newPost = await postFormWithAuth("/api/blog", payload, token);
+      setPosts((previous) => [newPost, ...previous]);
+      setForm(initialForm);
+      setShowComposer(false);
+      setError("");
+      setMessage("Your new blog post has been published.");
+    } catch (err) {
+      setError(err.message || "Could not publish your blog post.");
+    } finally {
+      setIsPublishing(false);
+    }
+  }
+
+  function getImageSrc(image) {
+    if (!image) return "/f4.png";
+    if (image.startsWith("http") || image.startsWith("/f")) return image;
+    return `${API_BASE_URL}${image}`;
   }
 
   return (
@@ -127,12 +157,11 @@ export default function BlogPage() {
               Tap the button in the bottom-right corner to add a new post.
             </h2>
             <p className="mt-3 text-sm leading-7 text-slate-300">
-              You can write a title, category, image URL, excerpt, and full
-              article. New posts are saved in your browser so the list stays
-              available when you come back.
+              You can write a title, category, excerpt, full article, and upload
+              an image that is stored with the blog post.
             </p>
             <div className="mt-6 rounded-2xl border border-white/10 bg-white/5 p-4 text-sm text-slate-200">
-              Posting as Community Writer. New posts are stored locally in your browser.
+              Posting requires a logged-in account.
             </div>
           </div>
         </div>
@@ -144,7 +173,18 @@ export default function BlogPage() {
         </div>
       )}
 
+      {error && !showComposer && (
+        <div className="rounded-2xl border border-red-200 bg-red-50 px-5 py-4 text-sm text-red-700">
+          {error}
+        </div>
+      )}
+
       <section className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
+        {isLoadingPosts ? (
+          <div className="rounded-3xl border border-slate-200 bg-white p-8 text-sm text-slate-600">
+            Loading blog posts...
+          </div>
+        ) : null}
         {posts.map((post) => (
           <article
             key={post.id}
@@ -153,7 +193,7 @@ export default function BlogPage() {
             <div className="relative h-52 w-full overflow-hidden bg-slate-100">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
-                src={post.image}
+                src={getImageSrc(post.image)}
                 alt={post.title}
                 className="h-full w-full object-cover"
               />
@@ -163,7 +203,7 @@ export default function BlogPage() {
                 <span>{post.category}</span>
                 <span className="h-1 w-1 rounded-full bg-slate-300" />
                 <span>
-                  {new Date(post.publishedAt).toLocaleDateString()}
+                  {new Date(post.publishedAt ?? post.createdAt).toLocaleDateString()}
                 </span>
               </div>
               <div>
@@ -251,15 +291,15 @@ export default function BlogPage() {
                   htmlFor="image"
                   className="mb-2 block text-sm font-semibold text-slate-800"
                 >
-                  Image URL
+                  Image
                 </label>
                 <input
                   id="image"
                   name="image"
-                  value={form.image}
+                  type="file"
+                  accept="image/png,image/jpeg,image/webp,image/gif"
                   onChange={handleChange}
-                  placeholder="/f4.png"
-                  className="block w-full rounded-xl border border-slate-200 px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100"
+                  className="block w-full rounded-xl border border-slate-200 px-4 py-3 text-sm text-slate-900 file:mr-4 file:rounded-lg file:border-0 file:bg-slate-900 file:px-3 file:py-2 file:text-sm file:font-semibold file:text-white outline-none transition focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100"
                 />
               </div>
 
@@ -306,9 +346,10 @@ export default function BlogPage() {
               <div className="flex flex-wrap gap-3">
                 <button
                   type="submit"
+                  disabled={isPublishing || loading || !token}
                   className="rounded-xl bg-slate-900 px-5 py-3 text-sm font-semibold text-white transition hover:bg-slate-800"
                 >
-                  Publish Post
+                  {isPublishing ? "Publishing..." : "Publish Post"}
                 </button>
                 <button
                   type="button"

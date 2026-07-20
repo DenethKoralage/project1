@@ -11,7 +11,7 @@ export const metadata = {
 export default function RootLayout({ children }) {
   return (
     <html lang="en">
-      <body className="bg-background text-foreground min-h-screen flex flex-col items-center pt-28">
+      <body className="bg-background text-foreground min-h-screen flex flex-col items-center pt-28" suppressHydrationWarning>
         <AuthProvider>
           <Navbar />
           <div className="flex-grow w-full max-w-5xl px-4 ">

@@ -84,6 +84,20 @@ export async function getWithAuth(path, token) {
   return data;
 }
 
+export async function getPublic(path) {
+  const response = await fetch(`${API_BASE_URL}${path}`, {
+    method: "GET",
+  });
+
+  const data = await readResponse(response);
+
+  if (!response.ok) {
+    throw createRequestError(data, response);
+  }
+
+  return data;
+}
+
 export async function postWithAuth(path, payload, token) {
   const response = await fetch(`${API_BASE_URL}${path}`, {
     method: "POST",
@@ -92,6 +106,24 @@ export async function postWithAuth(path, payload, token) {
       Authorization: `Bearer ${token}`,
     },
     body: JSON.stringify(payload),
+  });
+
+  const data = await readResponse(response);
+
+  if (!response.ok) {
+    throw createRequestError(data, response);
+  }
+
+  return data;
+}
+
+export async function postFormWithAuth(path, formData, token) {
+  const response = await fetch(`${API_BASE_URL}${path}`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+    body: formData,
   });
 
   const data = await readResponse(response);

@@ -52,7 +52,7 @@ export default function Navbar() {
                   href="/profile"
                   className="rounded-xl border border-emerald-700/20 bg-white/60 px-4 py-2 text-sm font-bold text-emerald-800 transition hover:bg-white"
                 >
-                  👤 {user.name}
+                  👤 {user.name.split(' ')[0]}
                 </Link>
                 <button
                   onClick={handleLogout}

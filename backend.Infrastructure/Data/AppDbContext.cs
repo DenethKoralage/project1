@@ -13,6 +13,7 @@ public class AppDbContext : DbContext
     public DbSet<Expense> Expenses => Set<Expense>();
     public DbSet<Budget> Budgets => Set<Budget>();
     public DbSet<Income> Incomes => Set<Income>();
+    public DbSet<Blog> Blogs => Set<Blog>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -75,6 +76,22 @@ public class AppDbContext : DbContext
             entity.HasOne(income => income.User)
                 .WithMany(user => user.Incomes)
                 .HasForeignKey(income => income.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        modelBuilder.Entity<Blog>(entity =>
+        {
+            entity.Property(blog => blog.Title).HasMaxLength(180);
+            entity.Property(blog => blog.Category).HasMaxLength(120);
+            entity.Property(blog => blog.Excerpt).HasMaxLength(512);
+            entity.Property(blog => blog.Image).HasMaxLength(512);
+            entity.Property(blog => blog.Author).HasMaxLength(120);
+            entity.Property(blog => blog.CreatedAt).HasDefaultValueSql("SYSUTCDATETIME()");
+            entity.Property(blog => blog.UpdatedAt).HasDefaultValueSql("SYSUTCDATETIME()");
+
+            entity.HasOne(blog => blog.User)
+                .WithMany(user => user.Blogs)
+                .HasForeignKey(blog => blog.UserId)
                 .OnDelete(DeleteBehavior.Cascade);
         });
     }
