@@ -17,7 +17,16 @@ const formatMoney = (value) =>
     maximumFractionDigits: 0,
   }).format(Number(value || 0));
 
-export function ExpenseListTable({ expenses, search, user }) {
+// Wrap a field in quotes and escape any embedded quotes, per CSV spec
+const csvEscape = (value) => {
+  const str = String(value ?? "");
+  if (/[",\n]/.test(str)) {
+    return `"${str.replace(/"/g, '""')}"`;
+  }
+  return str;
+};
+
+export function ExpenseListTable({ expenses, search, setSearch, user }) {
   const filteredExpenses = useMemo(() => {
     const term = search.trim().toLowerCase();
     if (!term) return expenses;
@@ -28,6 +37,29 @@ export function ExpenseListTable({ expenses, search, user }) {
       return category.includes(term) || date.includes(term);
     });
   }, [expenses, search]);
+
+  const handleExport = () => {
+    const header = ["Date", "Category", "Amount", "Description"];
+    const rows = filteredExpenses.map((expense) => {
+      const category = pick(expense, "Category", "category");
+      const date = toDateInput(pick(expense, "ExpenseDate", "expenseDate"));
+      const amount = Number(pick(expense, "Amount", "amount") || 0);
+      const description = pick(expense, "Description", "description") || "-";
+      return [date, category, amount, description].map(csvEscape).join(",");
+    });
+
+    const csvContent = [header.join(","), ...rows].join("\n");
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `expenses-${new Date().toISOString().slice(0, 10)}.csv`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  };
 
   const totalExpenses = filteredExpenses.reduce(
     (total, expense) => total + Number(pick(expense, "Amount", "amount") || 0),
@@ -45,12 +77,24 @@ export function ExpenseListTable({ expenses, search, user }) {
             Search by date or category
           </h2>
         </div>
-        <input
+        <select
           value={search}
-          onChange={(event) => {}}
-          placeholder="Search category or YYYY-MM-DD"
-          className="w-full rounded-md border border-stone-200 px-3 py-2 text-sm text-stone-900 outline-none focus:border-rose-500 sm:w-72"
-        />
+          onChange={(e) => setSearch(e.target.value)}
+          className="rounded-md border border-stone-200 bg-white px-3 py-2 text-sm text-stone-700 shadow-sm outline-none transition-colors focus:border-rose-500 focus:ring-1 focus:ring-rose-500"
+        >
+          <option value="">All categories</option>
+          {expenseCategories.map((cat) => (
+            <option key={cat} value={cat}>
+              {cat}
+            </option>
+          ))}
+        </select>
+        <button
+          onClick={handleExport}
+          className="rounded-md border border-stone-200 bg-white px-3 py-2 text-sm text-stone-700 shadow-sm outline-none transition-colors focus:border-rose-500 focus:ring-1 focus:ring-rose-500"
+        >
+          Export Excel
+        </button>
       </div>
 
       <div className="mt-5 overflow-x-auto">

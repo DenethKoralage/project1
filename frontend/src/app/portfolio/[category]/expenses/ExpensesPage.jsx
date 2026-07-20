@@ -1,19 +1,12 @@
 "use client";
 
 import Link from "next/link";
-import { use, useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { getWithAuth } from "@/lib/authApi";
 import { AddExpenseForm } from "./AddExpenseForm";
 import { ExpenseLineChart } from "./ExpenseLineChart";
 import { ExpenseListTable } from "./ExpenseListTable";
-
-const emptyExpenseForm = {
-  Amount: "",
-  Category: "Housing & Utilities",
-  ExpenseDate: new Date().toISOString().slice(0, 10),
-  Description: "",
-};
 
 const pick = (item, pascal, camel) => item?.[pascal] ?? item?.[camel];
 
@@ -77,6 +70,7 @@ export function ExpensesPage() {
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState({ type: "", message: "" });
   const [isLoading, setIsLoading] = useState(true);
+  const [isFormOpen, setIsFormOpen] = useState(false);
 
   const loadExpenses = useCallback(async () => {
     if (!token) return;
@@ -132,6 +126,7 @@ export function ExpensesPage() {
 
   const handleExpenseAdded = () => {
     loadExpenses();
+    setIsFormOpen(false);
   };
 
   return (
@@ -168,7 +163,7 @@ export function ExpensesPage() {
         </p>
       ) : null}
 
-      <section className="grid gap-5 lg:grid-cols-[1.3fr_0.7fr]">
+      <section className="grid gap-5">
         <div className="rounded-lg border border-stone-200 bg-white p-5 shadow-sm">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
@@ -212,7 +207,6 @@ export function ExpensesPage() {
           </div>
         </div>
 
-        <AddExpenseForm token={token} onExpenseAdded={handleExpenseAdded} />
       </section>
 
       <ExpenseListTable
@@ -221,6 +215,33 @@ export function ExpensesPage() {
         setSearch={setSearch}
         user={user}
       />
+
+      <button
+        type="button"
+        onClick={() => setIsFormOpen(true)}
+        aria-label="Add new expense"
+        className="fixed bottom-6 right-6 z-40 flex h-14 w-14 items-center justify-center rounded-full bg-emerald-600 text-3xl font-semibold leading-none text-white shadow-lg transition hover:scale-105 hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2"
+      >
+        +
+      </button>
+
+      {isFormOpen ? (
+        <div className="fixed inset-0 z-50 flex items-end justify-center bg-stone-950/40 px-4 py-6 sm:items-center">
+          <button
+            type="button"
+            aria-label="Close add expense form"
+            onClick={() => setIsFormOpen(false)}
+            className="absolute inset-0 cursor-default"
+          />
+          <div className="relative w-full max-w-md">
+            <AddExpenseForm
+              token={token}
+              onExpenseAdded={handleExpenseAdded}
+              onClose={() => setIsFormOpen(false)}
+            />
+          </div>
+        </div>
+      ) : null}
     </main>
   );
 }

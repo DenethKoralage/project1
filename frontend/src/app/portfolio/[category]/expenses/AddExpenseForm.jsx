@@ -11,7 +11,7 @@ const emptyExpenseForm = {
   Description: "",
 };
 
-export function AddExpenseForm({ token, onExpenseAdded }) {
+export function AddExpenseForm({ token, onExpenseAdded, onClose }) {
   const [form, setForm] = useState(emptyExpenseForm);
   const [isSaving, setIsSaving] = useState(false);
   const [status, setStatus] = useState({ type: "", message: "" });
@@ -52,6 +52,7 @@ export function AddExpenseForm({ token, onExpenseAdded }) {
       setForm(emptyExpenseForm);
       setStatus({ type: "success", message: "Expense added successfully." });
       if (onExpenseAdded) onExpenseAdded();
+      if (onClose) onClose();
     } catch (error) {
       setStatus({
         type: "error",
@@ -64,9 +65,21 @@ export function AddExpenseForm({ token, onExpenseAdded }) {
 
   return (
     <form onSubmit={handleSubmit} className="rounded-lg border border-stone-200 bg-white p-5 shadow-sm">
-      <p className="text-xs font-semibold uppercase tracking-[0.18em] text-stone-400">
-        Add new expense
-      </p>
+      <div className="flex items-start justify-between gap-4">
+        <p className="text-xs font-semibold uppercase tracking-[0.18em] text-stone-400">
+          Add new expense
+        </p>
+        {onClose ? (
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label="Close add expense form"
+            className="flex h-8 w-8 items-center justify-center rounded-md text-xl leading-none text-stone-500 transition hover:bg-stone-100 hover:text-stone-950"
+          >
+            &times;
+          </button>
+        ) : null}
+      </div>
 
       {status.message ? (
         <p

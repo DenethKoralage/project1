@@ -131,7 +131,7 @@ function IncomeLineChart({ data }) {
     <div className="h-full overflow-x-auto">
       <svg
         viewBox={`0 0 ${width} ${height}`}
-        className="h-full min-w-[680px] text-stone-500"
+        className="h-full min-w-[680px] text-stone-500 z-100"
         role="img"
         aria-label="Income progress line chart"
       >
@@ -239,6 +239,7 @@ function IncomePage() {
   const [status, setStatus] = useState({ type: "", message: "" });
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
+  const [isFormOpen, setIsFormOpen] = useState(false);
 
   const loadIncomes = useCallback(async () => {
     if (!token) return;
@@ -321,6 +322,7 @@ function IncomePage() {
       );
       setForm(emptyIncomeForm);
       setStatus({ type: "success", message: "Income added successfully." });
+      setIsFormOpen(false);
       await loadIncomes();
     } catch (error) {
       setStatus({
@@ -366,7 +368,7 @@ function IncomePage() {
         </p>
       ) : null}
 
-      <section className="grid gap-5 lg:grid-cols-[1.3fr_0.7fr]">
+      <section className="grid gap-5">
         <div className="rounded-lg border border-stone-200 bg-white p-5 shadow-sm">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
@@ -409,90 +411,6 @@ function IncomePage() {
           </div>
         </div>
 
-        <form
-          onSubmit={handleSubmit}
-          className="rounded-lg border border-stone-200 bg-white p-5 shadow-sm"
-        >
-          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-stone-400">
-            Add new income
-          </p>
-          <div className="mt-4 space-y-4">
-            <label className="block">
-              <span className="text-sm font-medium text-stone-700">Amount</span>
-              <input
-                name="Amount"
-                type="number"
-                min="0.01"
-                step="0.01"
-                value={form.Amount}
-                onChange={handleChange}
-                required
-                className="mt-1 w-full rounded-md border border-stone-200 px-3 py-2 text-stone-900 outline-none focus:border-emerald-500"
-              />
-            </label>
-
-            <label className="block">
-              <span className="text-sm font-medium text-stone-700">Source</span>
-              <select
-                name="Source"
-                value={form.Source}
-                onChange={handleChange}
-                required
-                className="mt-1 w-full rounded-md border border-stone-200 bg-white px-3 py-2 text-stone-900 outline-none focus:border-emerald-500"
-              >
-                {incomeSources.map((source) => (
-                  <option key={source} value={source}>
-                    {source}
-                  </option>
-                ))}
-              </select>
-            </label>
-
-            <label className="block">
-              <span className="text-sm font-medium text-stone-700">Category</span>
-              <input
-                name="Category"
-                value={form.Category}
-                onChange={handleChange}
-                required
-                maxLength={120}
-                className="mt-1 w-full rounded-md border border-stone-200 px-3 py-2 text-stone-900 outline-none focus:border-emerald-500"
-              />
-            </label>
-
-            <label className="block">
-              <span className="text-sm font-medium text-stone-700">Income Date</span>
-              <input
-                name="IncomeDate"
-                type="date"
-                value={form.IncomeDate}
-                onChange={handleChange}
-                required
-                className="mt-1 w-full rounded-md border border-stone-200 px-3 py-2 text-stone-900 outline-none focus:border-emerald-500"
-              />
-            </label>
-
-            <label className="block">
-              <span className="text-sm font-medium text-stone-700">Description</span>
-              <textarea
-                name="Description"
-                value={form.Description}
-                onChange={handleChange}
-                maxLength={512}
-                rows={3}
-                className="mt-1 w-full rounded-md border border-stone-200 px-3 py-2 text-stone-900 outline-none focus:border-emerald-500"
-              />
-            </label>
-
-            <button
-              type="submit"
-              disabled={isSaving || !token}
-              className="w-full rounded-md bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-60"
-            >
-              {isSaving ? "Adding..." : "Add Income"}
-            </button>
-          </div>
-        </form>
       </section>
 
       <section className="rounded-lg border border-stone-200 bg-white p-5 shadow-sm">
@@ -558,6 +476,123 @@ function IncomePage() {
           </table>
         </div>
       </section>
+
+      <button
+        type="button"
+        onClick={() => setIsFormOpen(true)}
+        aria-label="Add new income"
+        className="fixed bottom-6 right-6 z-40 flex h-14 w-14 items-center justify-center rounded-full bg-emerald-600 text-3xl font-semibold leading-none text-white shadow-lg transition hover:scale-105 hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2"
+      >
+        +
+      </button>
+
+      {isFormOpen ? (
+        <div className="fixed inset-0 z-50 flex items-end justify-center bg-stone-950/40 px-4 py-6 sm:items-center">
+          <button
+            type="button"
+            aria-label="Close add income form"
+            onClick={() => setIsFormOpen(false)}
+            className="absolute inset-0 cursor-default"
+          />
+          <form
+            onSubmit={handleSubmit}
+            role="dialog"
+            aria-modal="true"
+            aria-label="Add new income"
+            className="relative w-full max-w-md rounded-lg border border-stone-200 bg-white p-5 shadow-xl"
+          >
+            <div className="flex items-start justify-between gap-4">
+              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-stone-400">
+                Add new income
+              </p>
+              <button
+                type="button"
+                onClick={() => setIsFormOpen(false)}
+                aria-label="Close add income form"
+                className="flex h-8 w-8 items-center justify-center rounded-md text-xl leading-none text-stone-500 transition hover:bg-stone-100 hover:text-stone-950"
+              >
+                &times;
+              </button>
+            </div>
+            <div className="mt-4 space-y-4">
+              <label className="block">
+                <span className="text-sm font-medium text-stone-700">Amount</span>
+                <input
+                  name="Amount"
+                  type="number"
+                  min="0.01"
+                  step="0.01"
+                  value={form.Amount}
+                  onChange={handleChange}
+                  required
+                  className="mt-1 w-full rounded-md border border-stone-200 px-3 py-2 text-stone-900 outline-none focus:border-emerald-500"
+                />
+              </label>
+
+              <label className="block">
+                <span className="text-sm font-medium text-stone-700">Source</span>
+                <select
+                  name="Source"
+                  value={form.Source}
+                  onChange={handleChange}
+                  required
+                  className="mt-1 w-full rounded-md border border-stone-200 bg-white px-3 py-2 text-stone-900 outline-none focus:border-emerald-500"
+                >
+                  {incomeSources.map((source) => (
+                    <option key={source} value={source}>
+                      {source}
+                    </option>
+                  ))}
+                </select>
+              </label>
+
+              <label className="block">
+                <span className="text-sm font-medium text-stone-700">Category</span>
+                <input
+                  name="Category"
+                  value={form.Category}
+                  onChange={handleChange}
+                  required
+                  maxLength={120}
+                  className="mt-1 w-full rounded-md border border-stone-200 px-3 py-2 text-stone-900 outline-none focus:border-emerald-500"
+                />
+              </label>
+
+              <label className="block">
+                <span className="text-sm font-medium text-stone-700">Income Date</span>
+                <input
+                  name="IncomeDate"
+                  type="date"
+                  value={form.IncomeDate}
+                  onChange={handleChange}
+                  required
+                  className="mt-1 w-full rounded-md border border-stone-200 px-3 py-2 text-stone-900 outline-none focus:border-emerald-500"
+                />
+              </label>
+
+              <label className="block">
+                <span className="text-sm font-medium text-stone-700">Description</span>
+                <textarea
+                  name="Description"
+                  value={form.Description}
+                  onChange={handleChange}
+                  maxLength={512}
+                  rows={3}
+                  className="mt-1 w-full rounded-md border border-stone-200 px-3 py-2 text-stone-900 outline-none focus:border-emerald-500"
+                />
+              </label>
+
+              <button
+                type="submit"
+                disabled={isSaving || !token}
+                className="w-full rounded-md bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {isSaving ? "Adding..." : "Add Income"}
+              </button>
+            </div>
+          </form>
+        </div>
+      ) : null}
     </main>
   );
 }
