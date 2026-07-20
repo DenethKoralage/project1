@@ -1,9 +1,8 @@
+using backend.Application.DTOs;
 using backend.Application.Interfaces;
 using backend.Domain.Entities;
-using backend.Infrastructure.Data;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 using System.Security.Claims;
 
 namespace backend.API.Controllers;
@@ -12,43 +11,61 @@ namespace backend.API.Controllers;
 [Route("api/[controller]")]
 public class BlogController : ControllerBase
 {
-    private readonly AppDbContext _dbContext;
+    private readonly IBlogService _blogService;
     private readonly IImageStorageService _imageStorageService;
 
-    public BlogController(AppDbContext dbContext, IImageStorageService imageStorageService)
+    public BlogController(IBlogService blogService, IImageStorageService imageStorageService)
     {
-        _dbContext = dbContext;
+        _blogService = blogService;
         _imageStorageService = imageStorageService;
     }
 
+    /// <summary>
+    /// GET /api/blog
+    /// Query params: category, sort (newest|oldest), search, mine (true = scope to current user)
+    /// </summary>
     [HttpGet]
-    public async Task<ActionResult<IEnumerable<BlogDto>>> GetBlogs()
+    public async Task<ActionResult<IEnumerable<BlogDto>>> GetBlogs(
+        [FromQuery] string? category,
+        [FromQuery] string? sort,
+        [FromQuery] string? search,
+        [FromQuery] bool mine = false,
+        CancellationToken ct = default)
     {
-        var blogs = await _dbContext.Blogs
-            .AsNoTracking()
-            .Include(blog => blog.User)
-            .OrderByDescending(blog => blog.CreatedAt)
-            .Select(blog => ToDto(blog))
-            .ToListAsync();
+        var currentUserId = GetCurrentUserId();
 
+        var query = new BlogQueryDto(
+            UserId: mine ? currentUserId : null,
+            Category: category,
+            Sort: sort,
+            Search: search,
+            CurrentUserId: currentUserId
+        );
+
+        var blogs = await _blogService.GetBlogsAsync(query, ct);
         return Ok(blogs);
     }
 
+    /// <summary>
+    /// GET /api/blog/{id}
+    /// </summary>
     [HttpGet("{id:guid}")]
-    public async Task<ActionResult<BlogDto>> GetBlog(Guid id)
+    public async Task<ActionResult<BlogDto>> GetBlog(Guid id, CancellationToken ct = default)
     {
-        var blog = await _dbContext.Blogs
-            .AsNoTracking()
-            .Include(item => item.User)
-            .FirstOrDefaultAsync(item => item.Id == id);
-
-        return blog is null ? NotFound() : Ok(ToDto(blog));
+        var currentUserId = GetCurrentUserId();
+        var blog = await _blogService.GetBlogByIdAsync(id, currentUserId, ct);
+        return blog is null ? NotFound() : Ok(blog);
     }
 
+    /// <summary>
+    /// POST /api/blog  (multipart/form-data)
+    /// </summary>
     [Authorize]
     [HttpPost]
     [RequestSizeLimit(6 * 1024 * 1024)]
-    public async Task<ActionResult<BlogDto>> CreateBlog([FromForm] CreateBlogRequest request)
+    public async Task<ActionResult<BlogDto>> CreateBlog(
+        [FromForm] CreateBlogRequest request,
+        CancellationToken ct = default)
     {
         var userId = GetCurrentUserId();
         if (userId is null) return Unauthorized();
@@ -68,10 +85,13 @@ public class BlogController : ControllerBase
                 request.Image.FileName,
                 request.Image.Length,
                 imageStream,
-                HttpContext.RequestAborted);
+                ct);
         }
 
-        var user = await _dbContext.Users.FindAsync([userId.Value], HttpContext.RequestAborted);
+        // Resolve author name from JWT claims (name claim set during login)
+        var authorName = User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Name)?.Value
+                         ?? "Community Writer";
+
         var blog = new Blog
         {
             Id = Guid.NewGuid(),
@@ -80,40 +100,51 @@ public class BlogController : ControllerBase
             Excerpt = request.Excerpt.Trim(),
             Content = request.Content.Trim(),
             Image = imagePath ?? "/f4.png",
-            Author = user?.Name ?? "Community Writer",
+            Author = authorName,
             UserId = userId.Value,
             CreatedAt = DateTime.UtcNow,
             UpdatedAt = DateTime.UtcNow
         };
 
-        _dbContext.Blogs.Add(blog);
-        await _dbContext.SaveChangesAsync(HttpContext.RequestAborted);
-
-        blog.User = user!;
-        var dto = ToDto(blog);
-        return CreatedAtAction(nameof(GetBlog), new { id = blog.Id }, dto);
+        var dto = await _blogService.CreateBlogAsync(blog, ct);
+        return CreatedAtAction(nameof(GetBlog), new { id = dto.Id }, dto);
     }
+
+    /// <summary>
+    /// POST /api/blog/{id}/like  — toggles like (like if not liked, unlike if already liked)
+    /// </summary>
+    [Authorize]
+    [HttpPost("{id:guid}/like")]
+    public async Task<ActionResult<BlogLikeDto>> ToggleLike(Guid id, CancellationToken ct = default)
+    {
+        var userId = GetCurrentUserId();
+        if (userId is null) return Unauthorized();
+
+        var result = await _blogService.ToggleLikeAsync(id, userId.Value, ct);
+        return Ok(result);
+    }
+
+    /// <summary>
+    /// GET /api/blog/{id}/likes  — returns like count and whether current user has liked
+    /// </summary>
+    [HttpGet("{id:guid}/likes")]
+    public async Task<ActionResult<BlogLikeDto>> GetLikes(Guid id, CancellationToken ct = default)
+    {
+        var currentUserId = GetCurrentUserId();
+        var result = await _blogService.GetLikeSummaryAsync(id, currentUserId, ct);
+        return Ok(result);
+    }
+
+    // ── helpers ──────────────────────────────────────────────────────────────
 
     private int? GetCurrentUserId()
     {
-        var userIdClaim = User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier);
-        return userIdClaim != null && int.TryParse(userIdClaim.Value, out var userId)
-            ? userId
-            : null;
+        var claim = User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier);
+        return claim != null && int.TryParse(claim.Value, out var id) ? id : null;
     }
-
-    private static BlogDto ToDto(Blog blog) =>
-        new(
-            blog.Id,
-            blog.Title,
-            blog.Category,
-            blog.Excerpt,
-            blog.Content,
-            blog.Image ?? "/f4.png",
-            string.IsNullOrWhiteSpace(blog.Author) ? blog.User?.Name ?? "Community Writer" : blog.Author,
-            blog.CreatedAt
-        );
 }
+
+// ── request model (kept in same file for locality) ───────────────────────────
 
 public class CreateBlogRequest
 {
@@ -123,14 +154,3 @@ public class CreateBlogRequest
     public string Content { get; set; } = string.Empty;
     public IFormFile? Image { get; set; }
 }
-
-public record BlogDto(
-    Guid Id,
-    string Title,
-    string Category,
-    string Excerpt,
-    string Content,
-    string Image,
-    string Author,
-    DateTime PublishedAt
-);

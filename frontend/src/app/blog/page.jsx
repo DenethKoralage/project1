@@ -1,9 +1,25 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useAuth } from "@/context/AuthContext";
-import { API_BASE_URL, getPublic, postFormWithAuth } from "@/lib/authApi";
+import { useBlogs, useCreateBlog, useDebounce, useToggleLike } from "@/lib/hooks/useBlogs";
+import { getBlogImageSrc } from "@/lib/blogApi";
+import MyBlogs from "@/components/blog/MyBlogs";
+
+// ── Constants ──────────────────────────────────────────────────────────────────
+
+const CATEGORIES = [
+  "All",
+  "Budgeting",
+  "Investing",
+  "Income",
+  "Saving",
+  "Side Hustles",
+  "Financial Independence",
+  "Money Mindset",
+  "General",
+];
 
 const initialForm = {
   title: "",
@@ -13,369 +29,503 @@ const initialForm = {
   content: "",
 };
 
+// ── Page ───────────────────────────────────────────────────────────────────────
+
 export default function BlogPage() {
-  const { token, loading } = useAuth();
-  const [posts, setPosts] = useState([]);
+  const { token, loading: authLoading } = useAuth();
+
+  // Tab view mode: "all" (public feed) vs "my" (user's own blogs)
+  const [viewMode, setViewMode] = useState("all");
+
+  // Filter / sort / search state for public feed
+  const [category, setCategory] = useState("");
+  const [sort, setSort] = useState("newest");
+  const [searchInput, setSearchInput] = useState("");
+  const debouncedSearch = useDebounce(searchInput, 350);
+
+  // Composer state
   const [showComposer, setShowComposer] = useState(false);
   const [form, setForm] = useState(initialForm);
-  const [error, setError] = useState("");
-  const [message, setMessage] = useState("");
-  const [isLoadingPosts, setIsLoadingPosts] = useState(true);
-  const [isPublishing, setIsPublishing] = useState(false);
+  const [formError, setFormError] = useState("");
+  const [successMsg, setSuccessMsg] = useState("");
 
-  useEffect(() => {
-    let ignore = false;
+  // ── Data hooks for "All Blogs" ──────────────────────────────────────────────
 
-    async function loadPosts() {
-      try {
-        setIsLoadingPosts(true);
-        const data = await getPublic("/api/blog");
-        if (!ignore) setPosts(Array.isArray(data) ? data : []);
-      } catch (err) {
-        if (!ignore) setError(err.message || "Could not load blog posts.");
-      } finally {
-        if (!ignore) setIsLoadingPosts(false);
-      }
-    }
+  const {
+    data: posts = [],
+    isLoading: isLoadingPosts,
+    error: fetchError,
+  } = useBlogs({
+    category: category || undefined,
+    sort,
+    search: debouncedSearch || undefined,
+    mine: false, // All public blogs
+    token,
+  });
 
-    loadPosts();
-    return () => {
-      ignore = true;
-    };
-  }, []);
+  const createMutation = useCreateBlog(token);
+  const likeMutation = useToggleLike(token);
+
+  // ── Handlers ────────────────────────────────────────────────────────────────
 
   function handleChange(event) {
     const { name, value, files, type } = event.target;
-    setForm((previous) => ({
-      ...previous,
+    setForm((prev) => ({
+      ...prev,
       [name]: type === "file" ? files?.[0] ?? null : value,
     }));
-    setError("");
-    setMessage("");
+    setFormError("");
   }
 
   function handleCloseComposer() {
     setShowComposer(false);
     setForm(initialForm);
-    setError("");
+    setFormError("");
   }
 
   async function handleSubmit(event) {
     event.preventDefault();
 
     if (!form.title.trim() || !form.excerpt.trim() || !form.content.trim()) {
-      setError("Title, excerpt, and content are required.");
+      setFormError("Title, excerpt, and content are required.");
       return;
     }
-
     if (!token) {
-      setError("Log in before publishing a blog post.");
+      setFormError("Log in before publishing a blog post.");
       return;
     }
 
-    try {
-      setIsPublishing(true);
-      const payload = new FormData();
-      payload.append("title", form.title.trim());
-      payload.append("category", form.category.trim() || "General");
-      payload.append("excerpt", form.excerpt.trim());
-      payload.append("content", form.content.trim());
-      if (form.image) payload.append("image", form.image);
+    const payload = new FormData();
+    payload.append("title", form.title.trim());
+    payload.append("category", form.category.trim() || "General");
+    payload.append("excerpt", form.excerpt.trim());
+    payload.append("content", form.content.trim());
+    if (form.image) payload.append("image", form.image);
 
-      const newPost = await postFormWithAuth("/api/blog", payload, token);
-      setPosts((previous) => [newPost, ...previous]);
-      setForm(initialForm);
-      setShowComposer(false);
-      setError("");
-      setMessage("Your new blog post has been published.");
-    } catch (err) {
-      setError(err.message || "Could not publish your blog post.");
-    } finally {
-      setIsPublishing(false);
-    }
+    createMutation.mutate(payload, {
+      onSuccess: () => {
+        setForm(initialForm);
+        setShowComposer(false);
+        setSuccessMsg("Your new blog post has been published! 🎉");
+        setTimeout(() => setSuccessMsg(""), 5000);
+      },
+      onError: (err) => {
+        setFormError(err.message || "Could not publish your blog post.");
+      },
+    });
   }
 
-  function getImageSrc(image) {
-    if (!image) return "/f4.png";
-    if (image.startsWith("http") || image.startsWith("/f")) return image;
-    return `${API_BASE_URL}${image}`;
+  function handleLike(postId) {
+    if (!token) return;
+    likeMutation.mutate({ blogId: postId });
   }
+
+  // ── Render ──────────────────────────────────────────────────────────────────
 
   return (
     <main className="relative w-full space-y-10 pb-24">
-      <section className="relative overflow-hidden rounded-3xl border border-white/40 bg-gradient-to-br from-sky-100 via-cyan-50 to-emerald-100 p-8 shadow-[0_20px_70px_rgba(13,38,76,0.12)] md:p-12">
-        <div className="absolute -right-12 top-8 h-56 w-56 rounded-full bg-cyan-300/30 blur-3xl" />
-        <div className="absolute -left-12 bottom-0 h-56 w-56 rounded-full bg-emerald-300/30 blur-3xl" />
-
-        <div className="relative grid gap-8 lg:grid-cols-[1.05fr_0.95fr]">
-          <div className="space-y-5">
-            <div className="flex flex-wrap gap-3">
-              <p className="inline-flex rounded-full border border-emerald-900/10 bg-white/60 px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em] text-slate-700">
-                Blog
-              </p>
-              <p className="inline-flex rounded-full bg-slate-900/10 px-3 py-1 text-xs font-semibold text-slate-800">
-                Reader ideas, investing notes, and money systems
-              </p>
-            </div>
-            <h1 className="max-w-2xl text-4xl font-bold leading-tight text-slate-900 md:text-5xl">
-              Read practical money insights and publish your own blog posts.
-            </h1>
-            <p className="max-w-2xl text-base leading-7 text-slate-700 md:text-lg">
-              Explore featured guides from the site and add your own post with
-              the floating action button whenever you are ready to share.
-            </p>
-
-            <div className="grid gap-3 sm:grid-cols-3">
-              <div className="rounded-2xl border border-white/50 bg-white/70 p-4">
-                <p className="text-2xl font-bold text-slate-900">
-                  {posts.length}
-                </p>
-                <p className="mt-1 text-xs uppercase tracking-[0.18em] text-slate-500">
-                  Total Posts
-                </p>
-              </div>
-              <div className="rounded-2xl border border-white/50 bg-white/70 p-4">
-                <p className="text-2xl font-bold text-slate-900">3 min</p>
-                <p className="mt-1 text-xs uppercase tracking-[0.18em] text-slate-500">
-                  Quick Reads
-                </p>
-              </div>
-              <div className="rounded-2xl border border-white/50 bg-white/70 p-4">
-                <p className="text-2xl font-bold text-slate-900">Guest</p>
-                <p className="mt-1 text-xs uppercase tracking-[0.18em] text-slate-500">
-                  Publishing Mode
-                </p>
-              </div>
-            </div>
-          </div>
-
-          <div className="rounded-[2rem] border border-white/50 bg-slate-900 p-6 text-white shadow-[0_18px_50px_rgba(15,23,42,0.18)] md:p-8">
-            <p className="text-sm font-semibold uppercase tracking-[0.22em] text-emerald-200">
-              Publish from the floating button
-            </p>
-            <h2 className="mt-3 text-2xl font-bold">
-              Tap the button in the bottom-right corner to add a new post.
-            </h2>
-            <p className="mt-3 text-sm leading-7 text-slate-300">
-              You can write a title, category, excerpt, full article, and upload
-              an image that is stored with the blog post.
-            </p>
-            <div className="mt-6 rounded-2xl border border-white/10 bg-white/5 p-4 text-sm text-slate-200">
-              Posting requires a logged-in account.
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {message && (
-        <div className="rounded-2xl border border-emerald-200 bg-emerald-50 px-5 py-4 text-sm text-emerald-700">
-          {message}
-        </div>
-      )}
-
-      {error && !showComposer && (
-        <div className="rounded-2xl border border-red-200 bg-red-50 px-5 py-4 text-sm text-red-700">
-          {error}
-        </div>
-      )}
-
-      <section className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
-        {isLoadingPosts ? (
-          <div className="rounded-3xl border border-slate-200 bg-white p-8 text-sm text-slate-600">
-            Loading blog posts...
-          </div>
-        ) : null}
-        {posts.map((post) => (
-          <article
-            key={post.id}
-            className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm transition hover:-translate-y-1 hover:shadow-md"
+      {/* ── View Mode Switcher (All Blogs vs My Blogs) ────────────────────── */}
+      <div className="flex items-center justify-between border-b border-slate-200 pb-4">
+        <div className="flex rounded-2xl bg-slate-100 p-1 text-sm font-semibold">
+          <button
+            type="button"
+            onClick={() => setViewMode("all")}
+            className={`rounded-xl px-5 py-2.5 transition ${
+              viewMode === "all"
+                ? "bg-white text-slate-900 shadow-sm"
+                : "text-slate-600 hover:text-slate-900"
+            }`}
           >
-            <div className="relative h-52 w-full overflow-hidden bg-slate-100">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={getImageSrc(post.image)}
-                alt={post.title}
-                className="h-full w-full object-cover"
+            🌐 All Blogs
+          </button>
+          <button
+            type="button"
+            onClick={() => setViewMode("my")}
+            className={`rounded-xl px-5 py-2.5 transition ${
+              viewMode === "my"
+                ? "bg-slate-900 text-white shadow-sm"
+                : "text-slate-600 hover:text-slate-900"
+            }`}
+          >
+            👤 My Blogs
+          </button>
+        </div>
+
+        {viewMode === "all" && (
+          <Link
+            href="/my-blogs"
+            className="text-xs font-semibold text-emerald-700 hover:underline md:text-sm"
+          >
+            Manage My Blogs →
+          </Link>
+        )}
+      </div>
+
+      {/* Render MyBlogs Component if selected */}
+      {viewMode === "my" ? (
+        <MyBlogs />
+      ) : (
+        <>
+          {/* ── Hero ─────────────────────────────────────────────────────────── */}
+          <section className="relative overflow-hidden rounded-3xl border border-white/40 bg-gradient-to-br from-sky-100 via-cyan-50 to-emerald-100 p-8 shadow-[0_20px_70px_rgba(13,38,76,0.12)] md:p-12">
+            <div className="absolute -right-12 top-8 h-56 w-56 rounded-full bg-cyan-300/30 blur-3xl" />
+            <div className="absolute -left-12 bottom-0 h-56 w-56 rounded-full bg-emerald-300/30 blur-3xl" />
+
+            <div className="relative grid gap-8 lg:grid-cols-[1.05fr_0.95fr]">
+              <div className="space-y-5">
+                <div className="flex flex-wrap gap-3">
+                  <p className="inline-flex rounded-full border border-emerald-900/10 bg-white/60 px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em] text-slate-700">
+                    Blog
+                  </p>
+                  <p className="inline-flex rounded-full bg-slate-900/10 px-3 py-1 text-xs font-semibold text-slate-800">
+                    Reader ideas, investing notes, and money systems
+                  </p>
+                </div>
+                <h1 className="max-w-2xl text-4xl font-bold leading-tight text-slate-900 md:text-5xl">
+                  Read practical money insights and publish your own blog posts.
+                </h1>
+                <p className="max-w-2xl text-base leading-7 text-slate-700 md:text-lg">
+                  Explore featured guides from the site and add your own post with
+                  the floating action button whenever you are ready to share.
+                </p>
+
+                <div className="grid gap-3 sm:grid-cols-3">
+                  <div className="rounded-2xl border border-white/50 bg-white/70 p-4">
+                    <p className="text-2xl font-bold text-slate-900">{posts.length}</p>
+                    <p className="mt-1 text-xs uppercase tracking-[0.18em] text-slate-500">Total Posts</p>
+                  </div>
+                  <div className="rounded-2xl border border-white/50 bg-white/70 p-4">
+                    <p className="text-2xl font-bold text-slate-900">3 min</p>
+                    <p className="mt-1 text-xs uppercase tracking-[0.18em] text-slate-500">Quick Reads</p>
+                  </div>
+                  <div className="rounded-2xl border border-white/50 bg-white/70 p-4">
+                    <p className="text-2xl font-bold text-slate-900">{token ? "Author" : "Guest"}</p>
+                    <p className="mt-1 text-xs uppercase tracking-[0.18em] text-slate-500">Publishing Mode</p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="rounded-[2rem] border border-white/50 bg-slate-900 p-6 text-white shadow-[0_18px_50px_rgba(15,23,42,0.18)] md:p-8">
+                <p className="text-sm font-semibold uppercase tracking-[0.22em] text-emerald-200">
+                  Publish from the floating button
+                </p>
+                <h2 className="mt-3 text-2xl font-bold">
+                  Tap the button in the bottom-right corner to add a new post.
+                </h2>
+                <p className="mt-3 text-sm leading-7 text-slate-300">
+                  You can write a title, category, excerpt, full article, and upload
+                  an image that is stored with the blog post.
+                </p>
+                <div className="mt-6 rounded-2xl border border-white/10 bg-white/5 p-4 text-sm text-slate-200">
+                  {token ? "✅ You are logged in — start publishing!" : "Posting requires a logged-in account."}
+                </div>
+              </div>
+            </div>
+          </section>
+
+          {/* ── Success banner ────────────────────────────────────────────────── */}
+          {successMsg && (
+            <div className="rounded-2xl border border-emerald-200 bg-emerald-50 px-5 py-4 text-sm text-emerald-700">
+              {successMsg}
+            </div>
+          )}
+
+          {/* ── Filter / sort / search bar ────────────────────────────────────── */}
+          <section className="flex flex-wrap items-center gap-3">
+            {/* Search */}
+            <div className="relative flex-1 min-w-[200px]">
+              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm">🔍</span>
+              <input
+                id="blog-search"
+                type="text"
+                placeholder="Search posts…"
+                value={searchInput}
+                onChange={(e) => setSearchInput(e.target.value)}
+                className="w-full rounded-xl border border-slate-200 bg-white py-2.5 pl-9 pr-4 text-sm text-slate-800 outline-none transition focus:border-emerald-400 focus:ring-4 focus:ring-emerald-100"
               />
             </div>
-            <div className="space-y-4 p-6">
-              <div className="flex flex-wrap items-center gap-2 text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
-                <span>{post.category}</span>
-                <span className="h-1 w-1 rounded-full bg-slate-300" />
-                <span>
-                  {new Date(post.publishedAt ?? post.createdAt).toLocaleDateString()}
-                </span>
-              </div>
-              <div>
-                <h2 className="text-xl font-bold text-slate-900">
-                  {post.title}
-                </h2>
-                <p className="mt-2 text-sm text-slate-600">
-                  by {post.author}
-                </p>
-              </div>
-              <p className="text-sm leading-7 text-slate-600">{post.excerpt}</p>
-              <Link
-                href={`/blog/${post.id}`}
-                className="inline-flex text-sm font-semibold text-sky-700 transition hover:text-sky-800"
-              >
-                Read full post
-              </Link>
-            </div>
-          </article>
-        ))}
-      </section>
 
-      {showComposer && (
-        <div className="fixed inset-0 z-50 flex items-end justify-center bg-slate-950/45 p-4 backdrop-blur-sm md:items-center">
-          <div className="w-full max-w-3xl rounded-[2rem] border border-white/10 bg-white p-6 shadow-[0_25px_80px_rgba(15,23,42,0.3)] md:p-8">
-            <div className="mb-6 flex items-start justify-between gap-4">
-              <div>
-                <p className="text-sm font-semibold uppercase tracking-[0.22em] text-emerald-700">
-                  New Blog Post
-                </p>
-                <h2 className="mt-2 text-2xl font-bold text-slate-900">
-                  Share a new article
-                </h2>
-              </div>
+            {/* Category filter */}
+            <select
+              id="blog-category-filter"
+              value={category}
+              onChange={(e) => setCategory(e.target.value === "All" ? "" : e.target.value)}
+              className="rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-800 outline-none transition focus:border-emerald-400 focus:ring-4 focus:ring-emerald-100"
+            >
+              {CATEGORIES.map((c) => (
+                <option key={c} value={c === "All" ? "" : c}>{c}</option>
+              ))}
+            </select>
+
+            {/* Sort toggle */}
+            <div className="flex rounded-xl border border-slate-200 bg-white overflow-hidden text-sm">
               <button
                 type="button"
-                onClick={handleCloseComposer}
-                className="rounded-full border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
+                id="sort-newest"
+                onClick={() => setSort("newest")}
+                className={`px-4 py-2.5 font-semibold transition ${
+                  sort === "newest"
+                    ? "bg-slate-900 text-white"
+                    : "text-slate-600 hover:bg-slate-50"
+                }`}
               >
-                Close
+                Newest
+              </button>
+              <button
+                type="button"
+                id="sort-oldest"
+                onClick={() => setSort("oldest")}
+                className={`px-4 py-2.5 font-semibold transition ${
+                  sort === "oldest"
+                    ? "bg-slate-900 text-white"
+                    : "text-slate-600 hover:bg-slate-50"
+                }`}
+              >
+                Oldest
               </button>
             </div>
 
-            <form onSubmit={handleSubmit} className="grid gap-4">
-              <div className="grid gap-4 md:grid-cols-2">
-                <div>
-                  <label
-                    htmlFor="title"
-                    className="mb-2 block text-sm font-semibold text-slate-800"
+            {/* Result count */}
+            {!isLoadingPosts && (
+              <span className="text-xs text-slate-500 ml-auto">
+                {posts.length} post{posts.length !== 1 ? "s" : ""}
+              </span>
+            )}
+          </section>
+
+          {/* ── Error state ───────────────────────────────────────────────────── */}
+          {fetchError && (
+            <div className="rounded-2xl border border-red-200 bg-red-50 px-5 py-4 text-sm text-red-700">
+              {fetchError.message || "Could not load blog posts."}
+            </div>
+          )}
+
+          {/* ── Blog grid ─────────────────────────────────────────────────────── */}
+          <section className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
+            {isLoadingPosts ? (
+              Array.from({ length: 3 }).map((_, i) => (
+                <div
+                  key={i}
+                  className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm animate-pulse"
+                >
+                  <div className="h-52 bg-slate-100" />
+                  <div className="space-y-3 p-6">
+                    <div className="h-3 w-20 rounded bg-slate-100" />
+                    <div className="h-5 w-3/4 rounded bg-slate-100" />
+                    <div className="h-3 w-full rounded bg-slate-100" />
+                  </div>
+                </div>
+              ))
+            ) : posts.length === 0 ? (
+              <div className="col-span-full rounded-3xl border border-dashed border-slate-200 bg-white p-12 text-center text-slate-500">
+                <p className="text-4xl mb-3">📝</p>
+                <p className="font-semibold">No posts found.</p>
+                <p className="mt-1 text-sm">Try adjusting your search or filters.</p>
+              </div>
+            ) : (
+              posts.map((post) => (
+                <article
+                  key={post.id}
+                  className="group overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm transition hover:-translate-y-1 hover:shadow-md flex flex-col"
+                >
+                  {/* Image */}
+                  <div className="relative h-52 w-full overflow-hidden bg-slate-100 flex-shrink-0">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={getBlogImageSrc(post.image)}
+                      alt={post.title}
+                      className="h-full w-full object-cover transition group-hover:scale-105"
+                    />
+                    <span className="absolute top-3 left-3 rounded-full bg-white/90 px-3 py-1 text-xs font-semibold text-slate-700 shadow-sm backdrop-blur-sm">
+                      {post.category}
+                    </span>
+                  </div>
+
+                  {/* Body */}
+                  <div className="flex flex-col flex-1 space-y-3 p-6">
+                    <p className="text-xs text-slate-400 uppercase tracking-[0.18em]">
+                      {new Date(post.publishedAt ?? post.createdAt).toLocaleDateString()}
+                    </p>
+                    <div>
+                      <h2 className="text-xl font-bold text-slate-900 leading-snug">{post.title}</h2>
+                      <p className="mt-2 text-sm text-slate-600">by {post.author}</p>
+                    </div>
+                    <p className="text-sm leading-7 text-slate-600 flex-1">{post.excerpt}</p>
+
+                    {/* Footer row */}
+                    <div className="flex items-center justify-between pt-2 border-t border-slate-100">
+                      <Link
+                        href={`/blog/${post.id}`}
+                        className="text-sm font-semibold text-sky-700 transition hover:text-sky-800"
+                      >
+                        Read full post →
+                      </Link>
+
+                      <button
+                        type="button"
+                        id={`like-${post.id}`}
+                        onClick={() => handleLike(post.id)}
+                        disabled={!token || likeMutation.isPending}
+                        title={token ? (post.isLikedByMe ? "Unlike" : "Like") : "Log in to like"}
+                        className={`flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-semibold transition ${
+                          post.isLikedByMe
+                            ? "bg-rose-50 text-rose-600 hover:bg-rose-100"
+                            : "bg-slate-50 text-slate-500 hover:bg-slate-100"
+                        } disabled:opacity-50 disabled:cursor-not-allowed`}
+                      >
+                        <span>{post.isLikedByMe ? "❤️" : "🤍"}</span>
+                        <span>{post.likeCount ?? 0}</span>
+                      </button>
+                    </div>
+                  </div>
+                </article>
+              ))
+            )}
+          </section>
+
+          {/* ── Composer modal ────────────────────────────────────────────────── */}
+          {showComposer && (
+            <div className="fixed inset-0 z-50 flex items-end justify-center bg-slate-950/45 p-4 backdrop-blur-sm md:items-center">
+              <div className="w-full max-w-3xl rounded-[2rem] border border-white/10 bg-white p-6 shadow-[0_25px_80px_rgba(15,23,42,0.3)] md:p-8 max-h-[90vh] overflow-y-auto">
+                <div className="mb-6 flex items-start justify-between gap-4">
+                  <div>
+                    <p className="text-sm font-semibold uppercase tracking-[0.22em] text-emerald-700">
+                      New Blog Post
+                    </p>
+                    <h2 className="mt-2 text-2xl font-bold text-slate-900">Share a new article</h2>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={handleCloseComposer}
+                    className="rounded-full border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
                   >
-                    Title
-                  </label>
-                  <input
-                    id="title"
-                    name="title"
-                    value={form.title}
-                    onChange={handleChange}
-                    className="block w-full rounded-xl border border-slate-200 px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100"
-                  />
+                    Close
+                  </button>
                 </div>
 
-                <div>
-                  <label
-                    htmlFor="category"
-                    className="mb-2 block text-sm font-semibold text-slate-800"
-                  >
-                    Category
-                  </label>
-                  <select name="category" id="category" value={form.category} onChange={handleChange} className="block w-full rounded-xl border border-slate-200 px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100">
-                    <option value="">Select a category</option>
-                    <option value="Budgeting">Budgeting</option>
-                    <option value="Investing">Investing</option>
-                    <option value="Income">Income</option>
-                    <option value="Saving">Saving</option>
-                    <option value="Side Hustles">Side Hustles</option>
-                    <option value="Financial Independence">Financial Independence</option>
-                    <option value="Money Mindset">Money Mindset</option>
-                    <option value="General">General</option>
-                  </select>
-                </div>
-              </div>
+                <form onSubmit={handleSubmit} className="grid gap-4">
+                  <div className="grid gap-4 md:grid-cols-2">
+                    <div>
+                      <label htmlFor="title" className="mb-2 block text-sm font-semibold text-slate-800">
+                        Title
+                      </label>
+                      <input
+                        id="title"
+                        name="title"
+                        value={form.title}
+                        onChange={handleChange}
+                        placeholder="Your post title"
+                        className="block w-full rounded-xl border border-slate-200 px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100"
+                      />
+                    </div>
 
-              <div>
-                <label
-                  htmlFor="image"
-                  className="mb-2 block text-sm font-semibold text-slate-800"
-                >
-                  Image
-                </label>
-                <input
-                  id="image"
-                  name="image"
-                  type="file"
-                  accept="image/png,image/jpeg,image/webp,image/gif"
-                  onChange={handleChange}
-                  className="block w-full rounded-xl border border-slate-200 px-4 py-3 text-sm text-slate-900 file:mr-4 file:rounded-lg file:border-0 file:bg-slate-900 file:px-3 file:py-2 file:text-sm file:font-semibold file:text-white outline-none transition focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100"
-                />
-              </div>
+                    <div>
+                      <label htmlFor="composer-category" className="mb-2 block text-sm font-semibold text-slate-800">
+                        Category
+                      </label>
+                      <select
+                        name="category"
+                        id="composer-category"
+                        value={form.category}
+                        onChange={handleChange}
+                        className="block w-full rounded-xl border border-slate-200 px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100"
+                      >
+                        <option value="">Select a category</option>
+                        {CATEGORIES.filter((c) => c !== "All").map((c) => (
+                          <option key={c} value={c}>{c}</option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
 
-              <div>
-                <label
-                  htmlFor="excerpt"
-                  className="mb-2 block text-sm font-semibold text-slate-800"
-                >
-                  Excerpt
-                </label>
-                <textarea
-                  id="excerpt"
-                  name="excerpt"
-                  value={form.excerpt}
-                  onChange={handleChange}
-                  rows={3}
-                  className="block w-full rounded-xl border border-slate-200 px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100"
-                />
-              </div>
+                  <div>
+                    <label htmlFor="image" className="mb-2 block text-sm font-semibold text-slate-800">
+                      Image
+                    </label>
+                    <input
+                      id="image"
+                      name="image"
+                      type="file"
+                      accept="image/png,image/jpeg,image/webp,image/gif"
+                      onChange={handleChange}
+                      className="block w-full rounded-xl border border-slate-200 px-4 py-3 text-sm text-slate-900 file:mr-4 file:rounded-lg file:border-0 file:bg-slate-900 file:px-3 file:py-2 file:text-sm file:font-semibold file:text-white outline-none transition focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100"
+                    />
+                  </div>
 
-              <div>
-                <label
-                  htmlFor="content"
-                  className="mb-2 block text-sm font-semibold text-slate-800"
-                >
-                  Full content
-                </label>
-                <textarea
-                  id="content"
-                  name="content"
-                  value={form.content}
-                  onChange={handleChange}
-                  rows={8}
-                  className="block w-full rounded-xl border border-slate-200 px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100"
-                />
-              </div>
+                  <div>
+                    <label htmlFor="excerpt" className="mb-2 block text-sm font-semibold text-slate-800">
+                      Excerpt
+                    </label>
+                    <textarea
+                      id="excerpt"
+                      name="excerpt"
+                      value={form.excerpt}
+                      onChange={handleChange}
+                      rows={3}
+                      placeholder="A brief summary of your post…"
+                      className="block w-full rounded-xl border border-slate-200 px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100"
+                    />
+                  </div>
 
-              {error && (
-                <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
-                  {error}
-                </div>
-              )}
+                  <div>
+                    <label htmlFor="content" className="mb-2 block text-sm font-semibold text-slate-800">
+                      Full content
+                    </label>
+                    <textarea
+                      id="content"
+                      name="content"
+                      value={form.content}
+                      onChange={handleChange}
+                      rows={8}
+                      placeholder="Write your full article here…"
+                      className="block w-full rounded-xl border border-slate-200 px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100"
+                    />
+                  </div>
 
-              <div className="flex flex-wrap gap-3">
-                <button
-                  type="submit"
-                  disabled={isPublishing || loading || !token}
-                  className="rounded-xl bg-slate-900 px-5 py-3 text-sm font-semibold text-white transition hover:bg-slate-800"
-                >
-                  {isPublishing ? "Publishing..." : "Publish Post"}
-                </button>
-                <button
-                  type="button"
-                  onClick={handleCloseComposer}
-                  className="rounded-xl border border-slate-200 px-5 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
-                >
-                  Cancel
-                </button>
+                  {formError && (
+                    <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+                      {formError}
+                    </div>
+                  )}
+
+                  <div className="flex flex-wrap gap-3">
+                    <button
+                      type="submit"
+                      id="publish-post-btn"
+                      disabled={createMutation.isPending || authLoading || !token}
+                      className="rounded-xl bg-slate-900 px-5 py-3 text-sm font-semibold text-white transition hover:bg-slate-800 disabled:opacity-60"
+                    >
+                      {createMutation.isPending ? "Publishing…" : "Publish Post"}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleCloseComposer}
+                      className="rounded-xl border border-slate-200 px-5 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </form>
               </div>
-            </form>
-          </div>
-        </div>
+            </div>
+          )}
+
+          {/* ── FAB ───────────────────────────────────────────────────────────── */}
+          <button
+            type="button"
+            id="open-composer-btn"
+            aria-label="Add new blog post"
+            onClick={() => {
+              setShowComposer(true);
+              setFormError("");
+              setSuccessMsg("");
+            }}
+            className="fixed bottom-6 right-6 z-40 flex h-16 w-16 items-center justify-center rounded-full bg-slate-900 text-3xl font-light text-white shadow-[0_20px_45px_rgba(15,23,42,0.35)] transition hover:-translate-y-1 hover:bg-slate-800"
+          >
+            +
+          </button>
+        </>
       )}
-
-      <button
-        type="button"
-        aria-label="Add new blog post"
-        onClick={() => {
-          setShowComposer(true);
-          setError("");
-          setMessage("");
-        }}
-        className="fixed bottom-6 right-6 z-40 flex h-16 w-16 items-center justify-center rounded-full bg-slate-900 text-3xl font-light text-white shadow-[0_20px_45px_rgba(15,23,42,0.35)] transition hover:-translate-y-1 hover:bg-slate-800"
-      >
-        +
-      </button>
     </main>
   );
 }

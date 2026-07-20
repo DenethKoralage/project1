@@ -14,6 +14,7 @@ public class AppDbContext : DbContext
     public DbSet<Budget> Budgets => Set<Budget>();
     public DbSet<Income> Incomes => Set<Income>();
     public DbSet<Blog> Blogs => Set<Blog>();
+    public DbSet<BlogLike> BlogLikes => Set<BlogLike>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -72,7 +73,7 @@ public class AppDbContext : DbContext
             entity.Property(income => income.Category).HasMaxLength(120);
             entity.Property(income => income.Source).HasMaxLength(120);
             entity.Property(income => income.IncomeDate).HasDefaultValueSql("SYSUTCDATETIME()");
-            
+
             entity.HasOne(income => income.User)
                 .WithMany(user => user.Incomes)
                 .HasForeignKey(income => income.UserId)
@@ -93,6 +94,22 @@ public class AppDbContext : DbContext
                 .WithMany(user => user.Blogs)
                 .HasForeignKey(blog => blog.UserId)
                 .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        modelBuilder.Entity<BlogLike>(entity =>
+        {
+            // Composite primary key prevents double-likes at the DB level
+            entity.HasKey(like => new { like.BlogId, like.UserId });
+
+            entity.HasOne(like => like.Blog)
+                .WithMany(blog => blog.Likes)
+                .HasForeignKey(like => like.BlogId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne(like => like.User)
+                .WithMany(user => user.BlogLikes)
+                .HasForeignKey(like => like.UserId)
+                .OnDelete(DeleteBehavior.NoAction); // avoid multiple cascade paths through User
         });
     }
 }

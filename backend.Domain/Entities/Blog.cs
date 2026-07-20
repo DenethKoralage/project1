@@ -1,4 +1,4 @@
-﻿namespace backend.Domain.Entities;
+namespace backend.Domain.Entities;
 
 public class Blog
 {
@@ -13,4 +13,5 @@ public class Blog
     public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
     public int UserId { get; set; }
     public User User { get; set; } = null!;
+    public List<BlogLike> Likes { get; set; } = new();
 }

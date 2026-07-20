@@ -13,6 +13,7 @@ public static class DependencyInjection
         services.AddScoped<IBudgetService, BudgetService>();
         services.AddScoped<IExpenseService, ExpenseService>();
         services.AddScoped<IIncomeService, IncomeService>();
+        services.AddScoped<IBlogService, BlogService>();
 
         return services;
     }
