@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
-import { API_BASE_URL, getPublic } from "@/lib/authApi";
+import { getApiBaseUrl, getPublic } from "@/lib/authApi";
 
 export default function BlogPostPage() {
   const params = useParams();
@@ -34,7 +34,7 @@ export default function BlogPostPage() {
   function getImageSrc(image) {
     if (!image) return "/f4.png";
     if (image.startsWith("http") || image.startsWith("/f")) return image;
-    return `${API_BASE_URL}${image}`;
+    return `${getApiBaseUrl()}${image}`;
   }
 
   if (isLoading) {

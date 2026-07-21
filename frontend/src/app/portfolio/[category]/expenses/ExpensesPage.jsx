@@ -130,7 +130,7 @@ export function ExpensesPage() {
   };
 
   return (
-    <main className="mx-auto w-full max-w-6xl space-y-6 py-8">
+    <main className="mx-auto w-full max-w-6xl min-w-0 space-y-6 py-8">
       <div className="flex flex-wrap items-end justify-between gap-4 border-b border-stone-200 pb-5">
         <div>
           <Link href="/portfolio" className="text-sm font-semibold text-emerald-700">
@@ -163,8 +163,8 @@ export function ExpensesPage() {
         </p>
       ) : null}
 
-      <section className="grid gap-5">
-        <div className="rounded-lg border border-stone-200 bg-white p-5 shadow-sm">
+      <section className="grid gap-5 min-w-0">
+        <div className="rounded-lg border border-stone-200 bg-white p-5 shadow-sm min-w-0">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
               <p className="text-xs font-semibold uppercase tracking-[0.18em] text-stone-400">
@@ -192,15 +192,15 @@ export function ExpensesPage() {
             </div>
           </div>
 
-          <div className="mt-6 h-72 border-l border-b border-stone-200 px-3 pb-4">
+          <div className="mt-6 w-full min-w-0">
             {isLoading ? (
-              <div className="flex h-full items-center justify-center text-sm text-stone-500">
+              <div className="flex h-[260px] items-center justify-center text-sm text-stone-500">
                 Loading expense progress...
               </div>
             ) : chartData.length ? (
               <ExpenseLineChart data={chartData} />
             ) : (
-              <div className="flex h-full items-center justify-center text-sm text-stone-500">
+              <div className="flex h-[260px] items-center justify-center text-sm text-stone-500">
                 No expense records match this view.
               </div>
             )}

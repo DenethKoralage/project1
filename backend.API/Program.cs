@@ -13,7 +13,13 @@ builder.Services.AddCors(options =>
     options.AddPolicy("Frontend", policy =>
     {
         policy
-            .WithOrigins("http://localhost:3000")
+            .WithOrigins(
+                "http://localhost:3000",
+                "https://localhost:3000",
+                "http://10.0.2.2:3000",
+                "https://10.0.2.2:3000",
+                "http://127.0.0.1:3000"
+            )
             .AllowAnyHeader()
             .AllowAnyMethod();
     });
@@ -53,7 +59,11 @@ app.UseStaticFiles();
 
 app.UseCors("Frontend");
 
-app.UseHttpsRedirection();
+if (!app.Environment.IsDevelopment())
+{
+    app.UseHttpsRedirection();
+}
+
 
 app.UseRouting();
 

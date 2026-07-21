@@ -59,7 +59,7 @@ export default function Home() {
         <div className="relative grid items-center gap-8 lg:grid-cols-2">
           <div className="space-y-6">
             {/* TOP BADGES */}
-            <div className="flex items-center gap-3">
+            <div className="flex flex-wrap items-center gap-2">
               <p className="inline-flex rounded-full border border-emerald-900/10 bg-white/60 px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em] text-slate-700">
                 The Financial Freedom
               </p>

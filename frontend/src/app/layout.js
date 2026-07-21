@@ -12,7 +12,7 @@ export const metadata = {
 export default function RootLayout({ children }) {
   return (
     <html lang="en">
-      <body className="bg-background text-foreground min-h-screen flex flex-col items-center pt-28" suppressHydrationWarning>
+      <body className="bg-background text-foreground min-h-screen flex flex-col items-center pt-20 md:pt-28" suppressHydrationWarning>
         <ReactQueryProvider>
           <AuthProvider>
             <Navbar />

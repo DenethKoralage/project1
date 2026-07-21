@@ -227,15 +227,15 @@ export function ExpensesPage() {
             </div>
           </div>
 
-          <div className="mt-6 h-72 border-l border-b border-stone-200 px-3 pb-4">
+          <div className="mt-6 w-full">
             {isLoading ? (
-              <div className="flex h-full items-center justify-center text-sm text-stone-500">
+              <div className="flex h-[260px] items-center justify-center text-sm text-stone-500">
                 Loading expense progress...
               </div>
             ) : chartData.length ? (
               <ExpenseLineChart data={chartData} />
             ) : (
-              <div className="flex h-full items-center justify-center text-sm text-stone-500">
+              <div className="flex h-[260px] items-center justify-center text-sm text-stone-500">
                 No expense records match this view.
               </div>
             )}

@@ -1,4 +1,4 @@
-import { API_BASE_URL, deleteWithAuth, getPublic, getWithAuth, postFormWithAuth, postWithAuth } from "@/lib/authApi";
+import { deleteWithAuth, getApiBaseUrl, getPublic, getWithAuth, postFormWithAuth, postWithAuth } from "@/lib/authApi";
 
 // ── Blog list ─────────────────────────────────────────────────────────────────
 
@@ -62,5 +62,6 @@ export async function deleteBlog(blogId, token) {
 export function getBlogImageSrc(image) {
   if (!image) return "/f4.png";
   if (image.startsWith("http") || image.startsWith("/f")) return image;
-  return `${API_BASE_URL}${image}`;
+  return `${getApiBaseUrl()}${image}`;
 }
+

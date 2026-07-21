@@ -1,7 +1,18 @@
-const DEFAULT_API_BASE_URL = "";
+export function getApiBaseUrl() {
+  if (process.env.NEXT_PUBLIC_API_BASE_URL) {
+    return process.env.NEXT_PUBLIC_API_BASE_URL;
+  }
 
-export const API_BASE_URL =
-  process.env.NEXT_PUBLIC_API_BASE_URL ?? DEFAULT_API_BASE_URL;
+  if (typeof window !== "undefined") {
+    const hostname = window.location.hostname;
+    return `http://${hostname}:5196`;
+  }
+
+  return "http://localhost:5196";
+}
+
+export const API_BASE_URL = getApiBaseUrl();
+
 
 async function readResponse(response) {
   const contentType = response.headers.get("content-type") ?? "";
@@ -50,13 +61,15 @@ function createRequestError(data, response) {
 }
 
 export async function postAuth(path, payload) {
-  const response = await fetch(`${API_BASE_URL}${path}`, {
+  const baseUrl = getApiBaseUrl();
+  const response = await fetch(`${baseUrl}${path}`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
     },
     body: JSON.stringify(payload),
   });
+
 
   const data = await readResponse(response);
 
@@ -68,7 +81,7 @@ export async function postAuth(path, payload) {
 }
 
 export async function getWithAuth(path, token) {
-  const response = await fetch(`${API_BASE_URL}${path}`, {
+  const response = await fetch(`${getApiBaseUrl()}${path}`, {
     method: "GET",
     headers: {
       Authorization: `Bearer ${token}`,
@@ -85,7 +98,7 @@ export async function getWithAuth(path, token) {
 }
 
 export async function getPublic(path) {
-  const response = await fetch(`${API_BASE_URL}${path}`, {
+  const response = await fetch(`${getApiBaseUrl()}${path}`, {
     method: "GET",
   });
 
@@ -99,7 +112,7 @@ export async function getPublic(path) {
 }
 
 export async function postWithAuth(path, payload, token) {
-  const response = await fetch(`${API_BASE_URL}${path}`, {
+  const response = await fetch(`${getApiBaseUrl()}${path}`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -118,7 +131,7 @@ export async function postWithAuth(path, payload, token) {
 }
 
 export async function postFormWithAuth(path, formData, token) {
-  const response = await fetch(`${API_BASE_URL}${path}`, {
+  const response = await fetch(`${getApiBaseUrl()}${path}`, {
     method: "POST",
     headers: {
       Authorization: `Bearer ${token}`,
@@ -136,7 +149,7 @@ export async function postFormWithAuth(path, formData, token) {
 }
 
 export async function putWithAuth(path, payload, token) {
-  const response = await fetch(`${API_BASE_URL}${path}`, {
+  const response = await fetch(`${getApiBaseUrl()}${path}`, {
     method: "PUT",
     headers: {
       "Content-Type": "application/json",
@@ -159,7 +172,7 @@ export async function putWithAuth(path, payload, token) {
 }
 
 export async function deleteWithAuth(path, token) {
-  const response = await fetch(`${API_BASE_URL}${path}`, {
+  const response = await fetch(`${getApiBaseUrl()}${path}`, {
     method: "DELETE",
     headers: {
       Authorization: `Bearer ${token}`,
@@ -178,3 +191,4 @@ export async function deleteWithAuth(path, token) {
 
   return data;
 }
+
