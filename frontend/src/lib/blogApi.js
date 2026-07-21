@@ -1,4 +1,4 @@
-import { API_BASE_URL, getPublic, getWithAuth, postFormWithAuth, postWithAuth } from "@/lib/authApi";
+import { API_BASE_URL, deleteWithAuth, getPublic, getWithAuth, postFormWithAuth, postWithAuth } from "@/lib/authApi";
 
 // ── Blog list ─────────────────────────────────────────────────────────────────
 
@@ -45,6 +45,16 @@ export async function toggleLike(blogId, token) {
 export async function fetchLikes(blogId, token = null) {
   const path = `/api/blog/${blogId}/likes`;
   return token ? getWithAuth(path, token) : getPublic(path);
+}
+
+// ── Delete blog ───────────────────────────────────────────────────────────────
+
+/**
+ * Delete a blog post by id. Only the creator can delete their own blog.
+ * Returns null on success (204 No Content).
+ */
+export async function deleteBlog(blogId, token) {
+  return deleteWithAuth(`/api/blog/${blogId}`, token);
 }
 
 // ── Image helper ──────────────────────────────────────────────────────────────

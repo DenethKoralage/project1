@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useState } from "react";
 import { useAuth } from "@/context/AuthContext";
-import { useBlogs, useCreateBlog, useDebounce, useToggleLike } from "@/lib/hooks/useBlogs";
+import { useBlogs, useCreateBlog, useDebounce, useToggleLike, useDeleteBlog } from "@/lib/hooks/useBlogs";
 import { getBlogImageSrc } from "@/lib/blogApi";
 
 const CATEGORIES = [
@@ -56,6 +56,10 @@ export default function MyBlogs() {
 
   const createMutation = useCreateBlog(token);
   const likeMutation = useToggleLike(token);
+  const deleteMutation = useDeleteBlog(token);
+
+  // Id of the blog pending deletion confirmation (null = no dialog open)
+  const [confirmDeleteId, setConfirmDeleteId] = useState(null);
 
   const totalLikes = posts.reduce((sum, p) => sum + (p.likeCount || 0), 0);
 
@@ -109,6 +113,24 @@ export default function MyBlogs() {
   function handleLike(postId) {
     if (!token) return;
     likeMutation.mutate({ blogId: postId });
+  }
+
+  function handleDeleteConfirm() {
+    if (!confirmDeleteId) return;
+    deleteMutation.mutate(
+      { blogId: confirmDeleteId },
+      {
+        onSuccess: () => {
+          setSuccessMsg("Blog post deleted successfully.");
+          setTimeout(() => setSuccessMsg(""), 4000);
+        },
+        onError: (err) => {
+          setSuccessMsg("");
+          setFormError(err.message || "Could not delete the blog post.");
+        },
+        onSettled: () => setConfirmDeleteId(null),
+      }
+    );
   }
 
   if (authLoading) {
@@ -330,25 +352,72 @@ export default function MyBlogs() {
                     Read article →
                   </Link>
 
-                  <button
-                    type="button"
-                    onClick={() => handleLike(post.id)}
-                    disabled={!token || likeMutation.isPending}
-                    className={`flex items-center gap-1.5 rounded-full px-3 py-1 text-sm font-semibold transition ${
-                      post.isLikedByMe
-                        ? "bg-rose-50 text-rose-600"
-                        : "bg-slate-50 text-slate-500 hover:bg-slate-100"
-                    }`}
-                  >
-                    <span>{post.isLikedByMe ? "❤️" : "🤍"}</span>
-                    <span>{post.likeCount ?? 0}</span>
-                  </button>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => handleLike(post.id)}
+                      disabled={!token || likeMutation.isPending}
+                      className={`flex items-center gap-1.5 rounded-full px-3 py-1 text-sm font-semibold transition ${
+                        post.isLikedByMe
+                          ? "bg-rose-50 text-rose-600"
+                          : "bg-slate-50 text-slate-500 hover:bg-slate-100"
+                      }`}
+                    >
+                      <span>{post.isLikedByMe ? "❤️" : "🧡"}</span>
+                      <span>{post.likeCount ?? 0}</span>
+                    </button>
+
+                    {/* Delete button — only visible to the creator */}
+                    <button
+                      type="button"
+                      id={`delete-blog-${post.id}`}
+                      onClick={() => setConfirmDeleteId(post.id)}
+                      disabled={deleteMutation.isPending}
+                      title="Delete this post"
+                      className="flex items-center gap-1 rounded-full bg-red-50 px-3 py-1 text-sm font-semibold text-red-600 transition hover:bg-red-100 disabled:opacity-50"
+                    >
+                      <span>🗑️</span>
+                    </button>
+                  </div>
                 </div>
               </div>
             </article>
           ))
         )}
       </section>
+
+      {/* Delete Confirmation Dialog */}
+      {confirmDeleteId && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-slate-950/50 p-4 backdrop-blur-sm">
+          <div className="w-full max-w-sm rounded-2xl border border-slate-200 bg-white p-6 shadow-[0_20px_60px_rgba(15,23,42,0.25)]">
+            <p className="text-2xl mb-2 text-center">🗑️</p>
+            <h3 className="text-lg font-bold text-slate-900 text-center">Delete this post?</h3>
+            <p className="mt-2 text-sm text-slate-600 text-center">
+              This action cannot be undone. Your blog post will be permanently removed.
+            </p>
+            <div className="mt-6 flex gap-3">
+              <button
+                id="confirm-delete-btn"
+                type="button"
+                onClick={handleDeleteConfirm}
+                disabled={deleteMutation.isPending}
+                className="flex-1 rounded-xl bg-red-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-red-700 disabled:opacity-60"
+              >
+                {deleteMutation.isPending ? "Deleting…" : "Yes, delete"}
+              </button>
+              <button
+                id="cancel-delete-btn"
+                type="button"
+                onClick={() => setConfirmDeleteId(null)}
+                disabled={deleteMutation.isPending}
+                className="flex-1 rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 disabled:opacity-60"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Composer Modal */}
       {showComposer && (

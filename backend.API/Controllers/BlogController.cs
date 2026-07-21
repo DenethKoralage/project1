@@ -135,6 +135,28 @@ public class BlogController : ControllerBase
         return Ok(result);
     }
 
+    /// <summary>
+    /// DELETE /api/blog/{id} — only the blog's creator can delete it
+    /// </summary>
+    [Authorize]
+    [HttpDelete("{id:guid}")]
+    public async Task<IActionResult> DeleteBlogById(Guid id, CancellationToken ct = default)
+    {
+        var currentUserId = GetCurrentUserId();
+        if (currentUserId is null) return Unauthorized();
+
+        var blog = await _blogService.GetBlogByIdAsync(id, currentUserId, ct);
+        if (blog is null) return NotFound();
+
+        // Only the creator may delete their own blog
+        if (blog.AuthorId != currentUserId.Value)
+            return Forbid();
+
+        await _blogService.DeleteBlogAsync(id, currentUserId, ct);
+
+        return NoContent();
+    }
+
     // ── helpers ──────────────────────────────────────────────────────────────
 
     private int? GetCurrentUserId()

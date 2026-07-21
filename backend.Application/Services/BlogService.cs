@@ -32,4 +32,7 @@ public class BlogService : IBlogService
 
     public async Task<BlogLikeDto> GetLikeSummaryAsync(Guid blogId, int? currentUserId, CancellationToken ct = default)
         => await _blogRepository.GetLikeSummaryAsync(blogId, currentUserId, ct);
+
+    public async Task DeleteBlogAsync(Guid blogId, int? currentUserId, CancellationToken ct = default)
+        => await _blogRepository.DeleteBlogAsync(blogId, currentUserId, ct);
 }

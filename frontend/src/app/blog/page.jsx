@@ -373,7 +373,7 @@ export default function BlogPage() {
                             : "bg-slate-50 text-slate-500 hover:bg-slate-100"
                         } disabled:opacity-50 disabled:cursor-not-allowed`}
                       >
-                        <span>{post.isLikedByMe ? "❤️" : "🤍"}</span>
+                        <span className="text-lg">{post.isLikedByMe ? "❤️" : "🩶"}</span>
                         <span>{post.likeCount ?? 0}</span>
                       </button>
                     </div>

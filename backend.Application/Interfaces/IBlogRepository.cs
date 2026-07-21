@@ -10,4 +10,5 @@ public interface IBlogRepository
     Task<Blog> CreateBlogAsync(Blog blog, CancellationToken ct = default);
     Task<BlogLikeDto> ToggleLikeAsync(Guid blogId, int userId, CancellationToken ct = default);
     Task<BlogLikeDto> GetLikeSummaryAsync(Guid blogId, int? currentUserId, CancellationToken ct = default);
+    Task<Blog> DeleteBlogAsync(Guid blogId, int? currentUserId, CancellationToken ct = default);
 }

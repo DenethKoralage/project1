@@ -101,6 +101,20 @@ public class BlogRepository : IBlogRepository
         return new BlogLikeDto(count, isLiked);
     }
 
+    public async Task<Blog> DeleteBlogAsync(Guid blogId, int? currentUserId, CancellationToken ct = default)
+    {
+        var blog = await _db.Blogs
+            .Include(b => b.Likes)
+            .FirstOrDefaultAsync(b => b.Id == blogId, ct);
+        if (blog is null)
+            throw new InvalidOperationException("Blog not found.");
+        if (currentUserId.HasValue && blog.UserId != currentUserId.Value)
+            throw new UnauthorizedAccessException("You are not authorized to delete this blog.");
+        _db.Blogs.Remove(blog);
+        await _db.SaveChangesAsync(ct);
+        return blog;
+    }
+
     // ── helpers ──────────────────────────────────────────────────────────────
 
     private static BlogDto ToDto(Blog blog, int? currentUserId) => new(

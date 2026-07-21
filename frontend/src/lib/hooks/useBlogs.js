@@ -1,7 +1,7 @@
 "use client";
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { fetchBlogs, fetchBlog, createBlog, toggleLike } from "@/lib/blogApi";
+import { fetchBlogs, fetchBlog, createBlog, toggleLike, deleteBlog } from "@/lib/blogApi";
 
 // ── Debounce helper ───────────────────────────────────────────────────────────
 
@@ -101,6 +101,46 @@ export function useToggleLike(token) {
 
     onSettled: () => {
       // Always re-sync from server after mutation settles
+      queryClient.invalidateQueries({ queryKey: ["blogs"] });
+    },
+  });
+}
+
+// ── useDeleteBlog ─────────────────────────────────────────────────────────────
+
+/**
+ * Deletes the caller's own blog post. Optimistically removes it from the cache
+ * and rolls back if the request fails.
+ */
+export function useDeleteBlog(token) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ blogId }) => deleteBlog(blogId, token),
+
+    onMutate: async ({ blogId }) => {
+      await queryClient.cancelQueries({ queryKey: ["blogs"] });
+      const previousBlogs = queryClient.getQueriesData({ queryKey: ["blogs"] });
+
+      // Optimistically remove the deleted post from every cached list
+      queryClient.setQueriesData({ queryKey: ["blogs"] }, (old) => {
+        if (!Array.isArray(old)) return old;
+        return old.filter((post) => post.id !== blogId);
+      });
+
+      return { previousBlogs };
+    },
+
+    onError: (_err, _vars, context) => {
+      // Roll back on failure
+      if (context?.previousBlogs) {
+        for (const [queryKey, data] of context.previousBlogs) {
+          queryClient.setQueryData(queryKey, data);
+        }
+      }
+    },
+
+    onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ["blogs"] });
     },
   });
