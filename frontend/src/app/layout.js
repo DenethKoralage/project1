@@ -3,6 +3,7 @@ import Navbar from "@/components/navbar/Navbar";
 import Footer from "@/components/footer/Footer";
 import { AuthProvider } from "@/context/AuthContext";
 import { ReactQueryProvider } from "@/components/ReactQueryProvider";
+import AuthGuard from "@/components/auth/AuthGuard";
 
 export const metadata = {
   title: "The Financial Freedom",
@@ -15,11 +16,13 @@ export default function RootLayout({ children }) {
       <body className="bg-background text-foreground min-h-screen flex flex-col items-center pt-20 md:pt-28" suppressHydrationWarning>
         <ReactQueryProvider>
           <AuthProvider>
-            <Navbar />
-            <div className="flex-grow w-full max-w-5xl px-4 ">
-              {children}
-            </div>
-            <Footer />
+            <AuthGuard>
+              <Navbar />
+              <div className="flex-grow w-full max-w-5xl px-4 ">
+                {children}
+              </div>
+              <Footer />
+            </AuthGuard>
           </AuthProvider>
         </ReactQueryProvider>
       </body>

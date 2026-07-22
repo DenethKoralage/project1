@@ -144,13 +144,6 @@ export default function ProfilePage() {
   });
   const [updateStatus, setUpdateStatus] = useState({ type: "", message: "" });
 
-  // Redirect to login if not authenticated after rehydration.
-  useEffect(() => {
-    if (!loading && !authUser) {
-      router.replace("/login");
-    }
-  }, [loading, authUser, router]);
-
   const fetchProfile = useCallback(async () => {
     try {
       setProfileLoading(true);
