@@ -45,7 +45,7 @@ export default function Navbar() {
 
   return (
     <>
-      <nav className="fixed left-1/2 top-4 z-50 w-[min(92%,900px)] -translate-x-1/2 rounded-2xl border border-white/25 bg-white/15 px-3 py-2 shadow-[0_10px_40px_rgba(0,0,0,0.2)] backdrop-blur-xl">
+      <nav className="fixed left-1/2 top-4 z-50 w-[min(92%,900px)] -translate-x-1/2 rounded-2xl border border-white/25 bg-white/15 px-3 py-2 shadow-[0_10px_40px_rgba(0,0,0,0.2)] backdrop-blur-xl transition-colors duration-300 md:px-4 md:py-3">
         <div className="flex items-center justify-between gap-3">
 
           {/* ── Brand / Logo ─────────────────────────────── */}
@@ -62,10 +62,10 @@ export default function Navbar() {
               <Link
                 key={link.id}
                 href={link.href}
-                className={`rounded-xl px-4 py-2 text-sm font-bold transition ${
+                className={`rounded-xl px-4 py-2 text-lg font-bold transition ${
                   pathname === link.href
-                    ? "bg-white/40 text-slate-900"
-                    : "text-teal-700 hover:bg-white/30 hover:text-teal-400"
+                    ? "bg-white/100 text-teal-900"
+                    : "text-teal-700 hover:bg-white/90 hover:text-teal-700"
                 }`}
               >
                 {link.name}
@@ -178,7 +178,7 @@ export default function Navbar() {
               className={`rounded-xl px-4 py-3 text-sm font-semibold transition ${
                 pathname === link.href
                   ? "bg-emerald-50 text-emerald-800"
-                  : "text-slate-700 hover:bg-slate-50 hover:text-slate-900"
+                  : "text-teal-700 hover:bg-slate-50 hover:text-slate-900"
               }`}
             >
               {link.name}
