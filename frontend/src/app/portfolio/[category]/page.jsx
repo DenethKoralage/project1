@@ -887,6 +887,9 @@ function BudgetPage() {
     return () => window.removeEventListener("keydown", onKeyDown);
   }, [isFormOpen]);
 
+  const remainingBudget = Number(pick(summary, "RemainingBudget", "remainingBudget") || 0);
+  const totalIncome = Number(pick(summary, "TotalBudget", "totalBudget") || 0);
+  const totalExpenses = Number(pick(summary, "Amount", "amount") || 0);
   const activeAllocationTotal = budgets.reduce(
     (total, budget) => {
       if (Boolean(pick(budget, "IsSpent", "isSpent"))) return total;
@@ -897,9 +900,6 @@ function BudgetPage() {
     },
     0
   );
-  const remainingBudget = Number(pick(summary, "RemainingBudget", "remainingBudget") || 0);
-  const totalIncome = Number(pick(summary, "TotalBudget", "totalBudget") || 0);
-  const totalExpenses = Number(pick(summary, "Amount", "amount") || 0);
   const availableToAllocate = remainingBudget - activeAllocationTotal;
 
   const handleChange = (event) => {
@@ -1006,12 +1006,11 @@ function BudgetPage() {
         </p>
       ) : null}
 
-      <section className="grid gap-4 md:grid-cols-4">
+      <section className="grid gap-4 md:grid-cols-3">
         {[
           ["Total income", totalIncome],
           ["Total expenses", totalExpenses],
           ["Remaining budget", remainingBudget],
-          ["Unallocated", availableToAllocate],
         ].map(([label, value]) => (
           <article key={label} className="rounded-lg border border-stone-200 bg-white p-5 shadow-sm">
             <p className="text-xs font-semibold uppercase tracking-[0.16em] text-stone-400">
