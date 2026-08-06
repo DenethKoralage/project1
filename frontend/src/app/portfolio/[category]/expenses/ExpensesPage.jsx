@@ -129,28 +129,58 @@ export function ExpensesPage() {
     setIsFormOpen(false);
   };
 
+  const topCategory = (() => {
+    const totals = {};
+    filteredExpenses.forEach((e) => {
+      const cat = String(pick(e, "Category", "category") || "Other");
+      totals[cat] = (totals[cat] || 0) + Number(pick(e, "Amount", "amount") || 0);
+    });
+    const sorted = Object.entries(totals).sort((a, b) => b[1] - a[1]);
+    return sorted[0]?.[0] ?? "—";
+  })();
+
   return (
     <main className="mx-auto w-full max-w-6xl min-w-0 space-y-6 py-8">
-      <div className="flex flex-wrap items-end justify-between gap-4 border-b border-stone-200 pb-5">
-        <div>
-          <Link href="/portfolio" className="text-sm font-semibold text-emerald-700">
-            Portfolio
-          </Link>
-          <h1 className="mt-2 text-3xl font-bold text-stone-950">Expenses</h1>
-          <p className="mt-2 max-w-2xl text-sm leading-6 text-stone-600">
-            Track outgoing money by category, date, and amount, filter progress
-            monthly or annually, and keep each source searchable.
-          </p>
+      {/* ── HERO CARD ── */}
+      <section className="relative overflow-hidden rounded-3xl border border-emerald-900/10 bg-gradient-to-br from-emerald-900 via-teal-900 to-slate-900 p-8 text-white shadow-xl md:p-10">
+        <div className="absolute -right-10 -top-10 h-48 w-48 rounded-full bg-emerald-500/20 blur-3xl" />
+        <div className="absolute -left-10 -bottom-10 h-48 w-48 rounded-full bg-teal-500/20 blur-3xl" />
+
+        <div className="relative flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
+          <div className="space-y-3">
+            <Link href="/portfolio" className="inline-flex rounded-full border border-emerald-400/30 bg-emerald-500/20 px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em] text-emerald-200 transition hover:bg-emerald-500/30">
+              ← Portfolio
+            </Link>
+            <h1 className="text-3xl font-extrabold tracking-tight text-white md:text-4xl">Expenses</h1>
+            <p className="text-sm leading-relaxed text-emerald-100/80 max-w-xl">
+              Track outgoing money by category, date, and amount, filter progress monthly or annually, and keep each source searchable.
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={() => setIsFormOpen(true)}
+            className="self-start md:self-center inline-flex items-center gap-2 rounded-2xl bg-emerald-400 px-6 py-3.5 text-sm font-bold text-slate-950 shadow-lg transition hover:bg-emerald-300 hover:scale-[1.02]"
+          >
+            <span>➕</span> Add Expense
+          </button>
         </div>
-        <div className="rounded-lg border border-stone-200 bg-white px-4 py-3 text-right">
-          <p className="text-xs font-semibold uppercase tracking-[0.16em] text-stone-400">
-            Visible Total
-          </p>
-          <p className="mt-1 text-2xl font-bold text-stone-950">
-            {formatMoney(totalExpenses)}
-          </p>
+
+        {/* Stats */}
+        <div className="mt-8 grid grid-cols-2 gap-4 border-t border-white/10 pt-6 sm:grid-cols-3">
+          <div className="rounded-2xl bg-white/10 p-4 backdrop-blur-md">
+            <p className="text-2xl font-black text-emerald-300">{filteredExpenses.length}</p>
+            <p className="mt-0.5 text-xs font-medium uppercase tracking-wider text-slate-300">Records</p>
+          </div>
+          <div className="rounded-2xl bg-white/10 p-4 backdrop-blur-md">
+            <p className="text-2xl font-black text-rose-300">{isLoading ? "…" : formatMoney(totalExpenses)}</p>
+            <p className="mt-0.5 text-xs font-medium uppercase tracking-wider text-slate-300">Visible Total</p>
+          </div>
+          <div className="col-span-2 sm:col-span-1 rounded-2xl bg-white/10 p-4 backdrop-blur-md">
+            <p className="text-lg font-black text-amber-300 truncate">{topCategory}</p>
+            <p className="mt-0.5 text-xs font-medium uppercase tracking-wider text-slate-300">Top Category</p>
+          </div>
         </div>
-      </div>
+      </section>
 
       {status.message ? (
         <p

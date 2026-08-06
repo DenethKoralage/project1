@@ -26,7 +26,7 @@ const initialForm = {
   content: "",
 };
 
-export default function MyBlogs() {
+export default function MyBlogs({ initialOpenComposer = false }) {
   const { user, token, loading: authLoading } = useAuth();
 
   // Filters state
@@ -35,8 +35,8 @@ export default function MyBlogs() {
   const [searchInput, setSearchInput] = useState("");
   const debouncedSearch = useDebounce(searchInput, 350);
 
-  // Composer modal state
-  const [showComposer, setShowComposer] = useState(false);
+  // Composer modal state — open immediately if caller requested it
+  const [showComposer, setShowComposer] = useState(initialOpenComposer);
   const [form, setForm] = useState(initialForm);
   const [formError, setFormError] = useState("");
   const [successMsg, setSuccessMsg] = useState("");
