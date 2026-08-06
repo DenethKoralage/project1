@@ -5,6 +5,9 @@ import { useState } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { useBlogs, useCreateBlog, useDebounce, useToggleLike, useDeleteBlog } from "@/lib/hooks/useBlogs";
 import { getBlogImageSrc } from "@/lib/blogApi";
+import { PortfolioHeroCard } from "@/components/organisms";
+import { SearchInput, SortToggle } from "@/components/molecules";
+import { StatusBanner } from "@/components/atoms";
 
 const CATEGORIES = [
   "All",
@@ -162,76 +165,34 @@ export default function MyBlogs({ initialOpenComposer = false }) {
   return (
     <div className="w-full space-y-8">
       {/* Hero / Header Card */}
-      <section className="relative overflow-hidden rounded-3xl border border-emerald-900/10 bg-gradient-to-br from-emerald-900 via-teal-900 to-slate-900 p-8 text-white shadow-xl md:p-10">
-        <div className="absolute -right-10 -top-10 h-48 w-48 rounded-full bg-emerald-500/20 blur-3xl" />
-        <div className="absolute -left-10 -bottom-10 h-48 w-48 rounded-full bg-teal-500/20 blur-3xl" />
-
-        <div className="relative flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
-          <div className="space-y-3">
-            <div className="inline-flex rounded-full border border-emerald-400/30 bg-emerald-500/20 px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em] text-emerald-200">
-              Personal Author Dashboard
-            </div>
-            <h1 className="text-3xl font-extrabold tracking-tight text-white md:text-4xl">
-              My Blog Posts
-            </h1>
-            <p className="text-sm leading-relaxed text-emerald-100/80 max-w-xl">
-              Manage and view articles written by <span className="font-semibold text-white">{user?.name || "you"}</span>.
-            </p>
-          </div>
-
-          <button
-            type="button"
-            onClick={() => setShowComposer(true)}
-            className="self-start md:self-center inline-flex items-center gap-2 rounded-2xl bg-emerald-400 px-6 py-3.5 text-sm font-bold text-slate-950 shadow-lg transition hover:bg-emerald-300 hover:scale-[1.02]"
-          >
-            <span>✍️</span> Create New Blog
-          </button>
-        </div>
-
-        {/* User Stats */}
-        <div className="mt-8 grid grid-cols-2 gap-4 border-t border-white/10 pt-6 sm:grid-cols-3">
-          <div className="rounded-2xl bg-white/10 p-4 backdrop-blur-md">
-            <p className="text-2xl font-black text-emerald-300">{posts.length}</p>
-            <p className="mt-0.5 text-xs font-medium uppercase tracking-wider text-slate-300">
-              Articles Created
-            </p>
-          </div>
-          <div className="rounded-2xl bg-white/10 p-4 backdrop-blur-md">
-            <p className="text-2xl font-black text-rose-300">{totalLikes}</p>
-            <p className="mt-0.5 text-xs font-medium uppercase tracking-wider text-slate-300">
-              Total Likes Received
-            </p>
-          </div>
-          <div className="col-span-2 sm:col-span-1 rounded-2xl bg-white/10 p-4 backdrop-blur-md">
-            <p className="text-2xl font-black text-cyan-300">Active</p>
-            <p className="mt-0.5 text-xs font-medium uppercase tracking-wider text-slate-300">
-              Author Status
-            </p>
-          </div>
-        </div>
-      </section>
+      <PortfolioHeroCard
+        title="My Blog Posts"
+        description={`Manage and view articles written by ${user?.name || "you"}.`}
+        backHref="/portfolio"
+        backLabel="Personal Author Dashboard"
+        stats={[
+          { value: posts.length, label: "Articles Created", valueClassName: "text-emerald-300" },
+          { value: totalLikes, label: "Total Likes Received", valueClassName: "text-rose-300" },
+          { value: "Active", label: "Author Status", valueClassName: "text-cyan-300" },
+        ]}
+        actionLabel="Create New Blog"
+        actionIcon="✍️"
+        onAction={() => setShowComposer(true)}
+      />
 
       {/* Success banner */}
-      {successMsg && (
-        <div className="rounded-2xl border border-emerald-200 bg-emerald-50 px-5 py-4 text-sm text-emerald-700">
-          {successMsg}
-        </div>
-      )}
+      <StatusBanner type="success" message={successMsg} variant="blog" />
 
       {/* Search & Filter Toolbar */}
       <section className="flex flex-wrap items-center gap-3">
         {/* Search */}
-        <div className="relative flex-1 min-w-[200px]">
-          <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-sm">🔍</span>
-          <input
-            id="my-blogs-search"
-            type="text"
-            placeholder="Search my posts..."
-            value={searchInput}
-            onChange={(e) => setSearchInput(e.target.value)}
-            className="w-full rounded-xl border border-slate-200 bg-white py-2.5 pl-10 pr-4 text-sm text-slate-800 outline-none transition focus:border-emerald-400 focus:ring-4 focus:ring-emerald-100"
-          />
-        </div>
+        <SearchInput
+          id="my-blogs-search"
+          placeholder="Search my posts..."
+          value={searchInput}
+          onChange={setSearchInput}
+          className="flex-1 min-w-[200px]"
+        />
 
         {/* Category filter */}
         <select
@@ -246,26 +207,7 @@ export default function MyBlogs({ initialOpenComposer = false }) {
         </select>
 
         {/* Sort toggle */}
-        <div className="flex rounded-xl border border-slate-200 bg-white overflow-hidden text-sm">
-          <button
-            type="button"
-            onClick={() => setSort("newest")}
-            className={`px-4 py-2.5 font-semibold transition ${
-              sort === "newest" ? "bg-slate-900 text-white" : "text-slate-600 hover:bg-slate-50"
-            }`}
-          >
-            Newest
-          </button>
-          <button
-            type="button"
-            onClick={() => setSort("oldest")}
-            className={`px-4 py-2.5 font-semibold transition ${
-              sort === "oldest" ? "bg-slate-900 text-white" : "text-slate-600 hover:bg-slate-50"
-            }`}
-          >
-            Oldest
-          </button>
-        </div>
+        <SortToggle value={sort} onChange={setSort} />
       </section>
 
       {/* Error state */}

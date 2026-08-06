@@ -2,29 +2,10 @@
 
 import { useMemo } from "react";
 import { expenseCategories } from "./expenseCategories";
-
-const pick = (item, pascal, camel) => item?.[pascal] ?? item?.[camel];
-
-const toDateInput = (value) => {
-  if (!value) return "";
-  return new Date(value).toISOString().slice(0, 10);
-};
-
-const formatMoney = (value) =>
-  new Intl.NumberFormat("en-US", {
-    style: "currency",
-    currency: "USD",
-    maximumFractionDigits: 0,
-  }).format(Number(value || 0));
-
-// Wrap a field in quotes and escape any embedded quotes, per CSV spec
-const csvEscape = (value) => {
-  const str = String(value ?? "");
-  if (/[",\n]/.test(str)) {
-    return `"${str.replace(/"/g, '""')}"`;
-  }
-  return str;
-};
+import { pick } from "@/utils/pick";
+import { formatMoney } from "@/utils/formatMoney";
+import { toDateInput } from "@/utils/toDateInput";
+import { downloadCsv } from "@/utils/csvExport";
 
 export function ExpenseListTable({ expenses, search, setSearch, user }) {
   const filteredExpenses = useMemo(() => {
@@ -51,20 +32,10 @@ export function ExpenseListTable({ expenses, search, setSearch, user }) {
       const date = toDateInput(pick(expense, "ExpenseDate", "expenseDate"));
       const amount = Number(pick(expense, "Amount", "amount") || 0);
       const description = pick(expense, "Description", "description") || "-";
-      return [date, category, amount, description].map(csvEscape).join(",");
+      return [date, category, amount, description];
     });
 
-    const csvContent = [header.join(","), ...rows].join("\n");
-    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
-    const url = URL.createObjectURL(blob);
-
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = `expenses-${new Date().toISOString().slice(0, 10)}.csv`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
+    downloadCsv([header, ...rows], `expenses-${new Date().toISOString().slice(0, 10)}.csv`);
   };
 
   const totalExpenses = filteredExpenses.reduce(

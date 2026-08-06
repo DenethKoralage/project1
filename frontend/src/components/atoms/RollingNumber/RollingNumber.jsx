@@ -1,7 +1,14 @@
-'use client';
+"use client";
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect } from "react";
 
+/**
+ * RollingNumber — animated counter that counts from 0 up to `target`.
+ * Uses requestAnimationFrame with an ease-out-quad easing function.
+ *
+ * @param {{ target: number, duration?: number }} props
+ * @returns JSX (renders a React fragment with the formatted number)
+ */
 export default function RollingNumber({ target, duration = 2000 }) {
   const [displayValue, setDisplayValue] = useState(0);
 
@@ -14,11 +21,9 @@ export default function RollingNumber({ target, duration = 2000 }) {
       const elapsed = currentTime - startTime;
       const progress = Math.min(elapsed / duration, 1);
 
-      // Easing function for smooth animation
+      // Ease-out-quad for smooth deceleration
       const easeOutQuad = 1 - (1 - progress) * (1 - progress);
-      
-      const currentValue = Math.floor(target * easeOutQuad);
-      setDisplayValue(currentValue);
+      setDisplayValue(Math.floor(target * easeOutQuad));
 
       if (progress < 1) {
         animationFrameId = requestAnimationFrame(animate);
@@ -26,11 +31,8 @@ export default function RollingNumber({ target, duration = 2000 }) {
     };
 
     animationFrameId = requestAnimationFrame(animate);
-
     return () => {
-      if (animationFrameId) {
-        cancelAnimationFrame(animationFrameId);
-      }
+      if (animationFrameId) cancelAnimationFrame(animationFrameId);
     };
   }, [target, duration]);
 

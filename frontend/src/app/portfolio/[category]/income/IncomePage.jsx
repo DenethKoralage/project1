@@ -1,9 +1,15 @@
 "use client";
 
-import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useAuth } from "@/context/AuthContext";
+import { PortfolioHeroCard } from "@/components/organisms";
+import { PortfolioSubpageTemplate } from "@/components/templates";
+import { StatusBanner } from "@/components/atoms";
 import { getWithAuth, postWithAuth } from "@/lib/authApi";
+import { pick } from "@/utils/pick";
+import { formatMoney } from "@/utils/formatMoney";
+import { toDateInput } from "@/utils/toDateInput";
+import { downloadCsv, csvEscape } from "@/utils/csvExport";
 
 const incomeSources = [
   "Wages/Salary",
@@ -14,14 +20,6 @@ const incomeSources = [
   "Others",
 ];
 
-const csvEscape = (value) => {
-  const str = String(value ?? "");
-  if (/[",\n]/.test(str)) {
-    return `"${str.replace(/"/g, '""')}"`;
-  }
-  return str;
-};
-
 const emptyIncomeForm = {
   Amount: "",
   Source: "Wages/Salary",
@@ -29,20 +27,6 @@ const emptyIncomeForm = {
   IncomeDate: new Date().toISOString().slice(0, 10),
   Description: "",
 };
-
-const pick = (item, pascal, camel) => item?.[pascal] ?? item?.[camel];
-
-const toDateInput = (value) => {
-  if (!value) return "";
-  return new Date(value).toISOString().slice(0, 10);
-};
-
-const formatMoney = (value) =>
-  new Intl.NumberFormat("en-US", {
-    style: "currency",
-    currency: "USD",
-    maximumFractionDigits: 0,
-  }).format(Number(value || 0));
 
 const isDateString = (value) => /^\d{4}-\d{2}-\d{2}$/.test(value);
 
@@ -350,16 +334,7 @@ export function IncomePage() {
       const description = pick(income, "Description", "description") || "-";
       return [date, source, category, amount, description];
     });
-    const csvContent = [header, ...rows].map((row) => row.map(csvEscape).join(",")).join("\n");
-    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = "incomes.csv";
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
+    downloadCsv([header, ...rows], `incomes-${new Date().toISOString().slice(0, 10)}.csv`);
   };
 
   const lastEntry = filteredIncomes.length
@@ -370,55 +345,29 @@ export function IncomePage() {
     : null;
 
   return (
-    <main className="mx-auto w-full max-w-6xl min-w-0 space-y-6 py-8">
-      {/* ── HERO CARD ── */}
-      <section className="relative overflow-hidden rounded-3xl border border-emerald-900/10 bg-gradient-to-br from-emerald-900 via-teal-900 to-slate-900 p-8 text-white shadow-xl md:p-10">
-        <div className="absolute -right-10 -top-10 h-48 w-48 rounded-full bg-emerald-500/20 blur-3xl" />
-        <div className="absolute -left-10 -bottom-10 h-48 w-48 rounded-full bg-teal-500/20 blur-3xl" />
-
-        <div className="relative flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
-          <div className="space-y-3">
-            <Link href="/portfolio" className="inline-flex rounded-full border border-emerald-400/30 bg-emerald-500/20 px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em] text-emerald-200 transition hover:bg-emerald-500/30">
-              ← Portfolio
-            </Link>
-            <h1 className="text-3xl font-extrabold tracking-tight text-white md:text-4xl">Income</h1>
-            <p className="text-sm leading-relaxed text-emerald-100/80 max-w-xl">
-              Track received income by date and amount, filter progress monthly or annually, and keep each source searchable.
-            </p>
-          </div>
-          <button
-            type="button"
-            onClick={() => setIsFormOpen(true)}
-            className="self-start md:self-center inline-flex items-center gap-2 rounded-2xl bg-emerald-400 px-6 py-3.5 text-sm font-bold text-slate-950 shadow-lg transition hover:bg-emerald-300 hover:scale-[1.02]"
-          >
-            <span>➕</span> Add Income
-          </button>
-        </div>
-
-        {/* Stats */}
-        <div className="mt-8 grid grid-cols-2 gap-4 border-t border-white/10 pt-6 sm:grid-cols-3">
-          <div className="rounded-2xl bg-white/10 p-4 backdrop-blur-md">
-            <p className="text-2xl font-black text-emerald-300">{filteredIncomes.length}</p>
-            <p className="mt-0.5 text-xs font-medium uppercase tracking-wider text-slate-300">Records</p>
-          </div>
-          <div className="rounded-2xl bg-white/10 p-4 backdrop-blur-md">
-            <p className="text-2xl font-black text-cyan-300">{isLoading ? "…" : formatMoney(totalIncome)}</p>
-            <p className="mt-0.5 text-xs font-medium uppercase tracking-wider text-slate-300">Visible Total</p>
-          </div>
-          <div className="col-span-2 sm:col-span-1 rounded-2xl bg-white/10 p-4 backdrop-blur-md">
-            <p className="text-2xl font-black text-amber-300">
-              {lastEntry ? lastEntry.toLocaleDateString("en-US", { month: "short", day: "numeric" }) : "—"}
-            </p>
-            <p className="mt-0.5 text-xs font-medium uppercase tracking-wider text-slate-300">Last Entry</p>
-          </div>
-        </div>
-      </section>
-
-      {status.message ? (
-        <p className={`rounded-lg px-4 py-3 text-sm font-medium ${status.type === "success" ? "bg-emerald-50 text-emerald-800" : "bg-rose-50 text-rose-800"}`}>
-          {status.message}
-        </p>
-      ) : null}
+    <PortfolioSubpageTemplate
+      heroSlot={
+        <PortfolioHeroCard
+          title="Income"
+          description="Track received income by date and amount, filter progress monthly or annually, and keep each source searchable."
+          backHref="/portfolio"
+          stats={[
+            { value: filteredIncomes.length, label: "Records", valueClassName: "text-emerald-300" },
+            { value: isLoading ? "…" : formatMoney(totalIncome), label: "Visible Total", valueClassName: "text-cyan-300" },
+            {
+              value: lastEntry ? lastEntry.toLocaleDateString("en-US", { month: "short", day: "numeric" }) : "—",
+              label: "Last Entry",
+              valueClassName: "text-amber-300",
+            },
+          ]}
+          actionLabel="Add Income"
+          onAction={() => setIsFormOpen(true)}
+        />
+      }
+      statusSlot={
+        <StatusBanner type={status.type} message={status.message} variant="portfolio" />
+      }
+    >
 
       <section className="grid gap-5 min-w-0">
         <div className="rounded-lg border border-stone-200 bg-white p-5 shadow-sm min-w-0">
@@ -571,6 +520,6 @@ export function IncomePage() {
           </form>
         </div>
       ) : null}
-    </main>
+    </PortfolioSubpageTemplate>
   );
 }

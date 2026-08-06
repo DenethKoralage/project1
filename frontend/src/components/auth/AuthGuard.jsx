@@ -2,6 +2,7 @@
 
 import { usePathname, useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
+import { Spinner } from "@/components/atoms";
 
 const PROTECTED_PREFIXES = ["/portfolio", "/blog", "/profile", "/my-blogs"];
 
@@ -18,7 +19,7 @@ export default function AuthGuard({ children }) {
   if (loading && isProtectedRoute) {
     return (
       <div className="flex min-h-[60vh] flex-col items-center justify-center py-12">
-        <div className="h-10 w-10 animate-spin rounded-full border-4 border-emerald-600 border-t-transparent" />
+        <Spinner size="md" />
         <p className="mt-4 text-sm font-medium text-slate-600">Verifying session...</p>
       </div>
     );

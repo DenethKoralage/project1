@@ -1,6 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
-import RollingNumber from "@/components/RollingNumber";
+import { RollingNumber } from "@/components/atoms";
 
 const stats = [
   { label: "Monthly Readers", value: "12K+", realValue: 12028 },
