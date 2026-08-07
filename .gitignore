@@ -39,6 +39,10 @@ logs/
 *.seed
 *.pid.lock
 
+# Local Piper runtime, voice model, and generated development audio cache
+frontend/tts-engine/
+frontend/.cache/tts-audio/
+
 # Operating-system files
 .DS_Store
 Thumbs.db

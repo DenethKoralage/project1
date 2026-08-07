@@ -101,11 +101,20 @@ export default function MyBlogs({ initialOpenComposer = false }) {
     if (form.image) payload.append("image", form.image);
 
     createMutation.mutate(payload, {
-      onSuccess: () => {
+      onSuccess: (newPost) => {
         setForm(initialForm);
         setShowComposer(false);
         setSuccessMsg("Your new blog post has been published! 🎉");
         setTimeout(() => setSuccessMsg(""), 5000);
+
+        // Optimistically pre-generate TTS audio in background
+        if (newPost?.id) {
+          fetch("/api/tts", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ blogId: newPost.id }),
+          }).catch(() => {});
+        }
       },
       onError: (err) => {
         setFormError(err.message || "Could not publish your blog post.");

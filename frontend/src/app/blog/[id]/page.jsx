@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import { getApiBaseUrl, getPublic } from "@/lib/authApi";
+import { BlogAudioPlayer } from "@/components/organisms";
 
 export default function BlogPostPage() {
   const params = useParams();
@@ -86,6 +87,9 @@ export default function BlogPostPage() {
           Written by {post.author}
         </p>
       </section>
+
+      {/* Audio Player Organism */}
+      <BlogAudioPlayer blogId={post.id ?? params.id} title={post.title} />
 
       <div className="relative h-[320px] overflow-hidden rounded-3xl border border-slate-200 bg-slate-100 shadow-sm md:h-[420px]">
         {/* eslint-disable-next-line @next/next/no-img-element */}

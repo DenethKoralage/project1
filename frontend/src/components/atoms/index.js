@@ -1,6 +1,6 @@
 /**
  * Barrel export for all Atoms.
- * Import from "@/components/atoms" for clean usage:
+ * Import from "@/components/atoms":
  *
  *   import { Button, StatusBanner, StatTile } from "@/components/atoms";
  */
@@ -18,3 +18,8 @@ export { Spinner }        from "./Spinner/Spinner";
 export { StatTile }       from "./StatTile/StatTile";
 export { StatusBanner }   from "./StatusBanner/StatusBanner";
 export { Textarea }       from "./Textarea/Textarea";
+
+// TTS Audio Player Atoms
+export { PlayPauseButton }   from "./PlayPauseButton/PlayPauseButton";
+export { AudioProgressBar }  from "./AudioProgressBar/AudioProgressBar";
+export { SpeedControl }      from "./SpeedControl/SpeedControl";

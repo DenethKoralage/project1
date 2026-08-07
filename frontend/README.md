@@ -2,6 +2,19 @@ This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-
 
 ## Getting Started
 
+## Local Piper text-to-speech
+
+This project uses Piper locally; it makes no hosted TTS calls and needs no API key. The binary, voice model, and generated audio are intentionally gitignored.
+
+1. Download the Windows AMD64 release from [Piper Releases](https://github.com/rhasspy/piper/releases), and extract the zip contents into `tts-engine/bin/` (so `tts-engine/bin/piper.exe` exists).
+2. Download `en_US-lessac-medium.onnx` and `en_US-lessac-medium.onnx.json` from [Piper Voices](https://huggingface.co/rhasspy/piper-voices/tree/main/en/en_US/lessac/medium) into `tts-engine/voices/`.
+3. Verify it from PowerShell:
+   ```powershell
+   "Hello text to speech" | .\tts-engine\bin\piper.exe --model .\tts-engine\voices\en_US-lessac-medium.onnx --output_file test.wav
+   ```
+
+The local audio cache is `.cache/tts-audio/`, keyed by post ID and prepared text hash. To specify custom binary or voice model locations, set `PIPER_PATH` and `PIPER_MODEL_PATH` in your `.env` file.
+
 First, run the development server:
 
 ```bash

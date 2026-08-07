@@ -51,3 +51,7 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# Local Piper runtime, voice model, and generated development audio cache
+/tts-engine/
+/.cache/tts-audio/

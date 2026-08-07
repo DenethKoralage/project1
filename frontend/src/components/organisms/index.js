@@ -6,3 +6,4 @@
  */
 
 export { PortfolioHeroCard } from "./PortfolioHeroCard/PortfolioHeroCard";
+export { BlogAudioPlayer }   from "./BlogAudioPlayer/BlogAudioPlayer";

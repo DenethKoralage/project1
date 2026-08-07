@@ -15,3 +15,6 @@ export { SearchInput }      from "./SearchInput/SearchInput";
 export { SelectWithSearch } from "./SelectWithSearch/SelectWithSearch";
 export { SortToggle }       from "./SortToggle/SortToggle";
 export { StatsRow }         from "./StatsRow/StatsRow";
+
+// TTS Player Molecules
+export { AudioPlayerControls } from "./AudioPlayerControls/AudioPlayerControls";
